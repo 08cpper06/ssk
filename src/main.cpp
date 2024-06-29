@@ -29,6 +29,8 @@ int main(int argc, const char* argv[]) {
 	std::unique_ptr<ast_node_base> root = parser::parse(toks);
 	if (root) {
 		std::cout << root->log("") << std::endl;
+	} else {
+		return 1;
 	}
 
 	std::cout << "==============" << std::endl;

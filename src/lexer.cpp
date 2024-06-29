@@ -31,6 +31,9 @@ std::optional<lexer::token> lexer::try_parse_sign(std::string::const_iterator& i
 	case '\n':
 		str = *itr++;
 		return token{ .raw = str, .type = token_type::sign };
+	case ';':
+		str = *itr++;
+		return token{ .raw = str, .type = token_type::semicolon };
 	default:
 		return std::nullopt;
 	}
@@ -49,5 +52,7 @@ std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 		}
 		assert(!*itr);
 	}
+
+	toks.push_back(token{ .raw = '\0', .type = token_type::eof});
 	return toks;
 }

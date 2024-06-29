@@ -8,7 +8,9 @@ class lexer {
 public:
 	enum class token_type : unsigned char {
 		sign,
-		number
+		number,
+		semicolon,
+		eof,
 	};
 	struct token {
 		std::string raw;

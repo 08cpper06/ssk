@@ -74,11 +74,60 @@ public:
 	std::unique_ptr<ast_node_base> rhs;
 };
 
+class ast_node_expr : public ast_node_base {
+public:
+	struct ast_expr_tag : public ast_base_tag {};
+	inline static constexpr ast_expr_tag tag;
+public:
+	ast_node_expr(std::unique_ptr<ast_node_base>&& expr) :
+		expr(std::move(expr))
+	{}
+	~ast_node_expr() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_expr::tag; }
+	virtual std::string log(std::string indent) {
+		if (expr) {
+			return expr->log(indent);
+		}
+		return indent + "<expr>error</expr>\n";
+	}
+	std::unique_ptr<ast_node_base> expr;
+};
+
+class ast_node_program : public ast_node_base {
+public:
+	struct ast_expr_tag : public ast_base_tag {};
+	inline static constexpr ast_expr_tag tag;
+public:
+	ast_node_program(std::vector<std::unique_ptr<ast_node_base>>&& exprs) :
+		exprs(std::move(exprs))
+	{}
+	~ast_node_program() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_expr::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = "";
+		ret += indent + "<program>\n";
+		if (exprs.size()) {
+			for (const std::unique_ptr<ast_node_base>& item : exprs) {
+				ret += item->log(indent + "\t");
+			}
+		} else {
+			ret += indent + "\t<expr>error</expr>\n";
+		}
+		ret += indent + "</program>\n";
+		return ret;
+	}
+	std::vector<std::unique_ptr<ast_node_base>> exprs;
+};
+
 class parser {
 public:
 	static std::unique_ptr<ast_node_base> try_build_value(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_timedivide_node(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_plusminus_node(std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_expr(std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_program(std::vector<lexer::token>::const_iterator& itr);
 public:
 	static std::unique_ptr<ast_node_base> parse(const std::vector<lexer::token>& toks) noexcept;
 };
