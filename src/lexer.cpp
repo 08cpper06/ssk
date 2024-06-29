@@ -38,6 +38,41 @@ std::optional<lexer::token> lexer::try_parse_sign(std::string::const_iterator& i
 		return std::nullopt;
 	}
 }
+
+std::optional<lexer::token> lexer::try_parse_keyword(std::string::const_iterator& itr, const std::string::const_iterator& end) noexcept {
+	struct keyword_info {
+		std::string str;
+		lexer::token_type type;
+	};
+	static keyword_info keywords[] = {
+		{ .str = "return", .type = lexer::token_type::_return }
+	};
+	auto start_with = [&end](std::string keyword, std::string::const_iterator _itr) -> int {
+		int i = 0;
+		for (i; keyword[i]; ++i) {
+			if (_itr == end ||
+				*_itr != keyword[i]) {
+				return 0;
+			}
+			++_itr;
+		}
+		return i;
+	};
+	int index = -1, max_len = 0, len = 0;
+	for (int i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i) {
+		len = start_with(keywords[i].str, itr);
+		if (len && max_len < len) {
+			index = i;
+			max_len = len;
+		}
+	}
+	itr += max_len;
+	if (index == -1 || !std::isspace(*itr)) {
+		return std::nullopt;
+	}
+	return token { .raw = keywords[index].str, .type = keywords[index].type };
+}
+
 std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 	std::string::const_iterator itr = source.begin();
 	std::vector<token> toks;
@@ -48,6 +83,16 @@ std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 		}
 		if (std::optional<token> sign = try_parse_sign(itr)) {
 			toks.push_back(sign.value());
+			continue;
+		}
+		if (std::optional<token> keyword = try_parse_keyword(itr, source.end())) {
+			toks.push_back(keyword.value());
+			continue;
+		}
+		if (std::isspace(*itr)) {
+			do {
+				++itr;
+			} while (std::isspace(*itr));
 			continue;
 		}
 		assert(!*itr);

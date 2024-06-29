@@ -13,17 +13,24 @@ std::unique_ptr<ast_node_base> parser::try_build_timedivide_node(std::vector<lex
 	if (!lhs) {
 		return nullptr;
 	}
+
+	std::unique_ptr<ast_node_bin> node;
 	std::string op;
-	if (itr->type == lexer::token_type::sign &&
-		(itr->raw == "*" || itr->raw == "/")) {
-		op = itr->raw;
+	while (lhs) {
+		if (itr->raw == "*" || itr->raw == "/") {
+			node = std::make_unique<ast_node_bin>();
+			node->op = itr->raw[0];
+			node->lhs = std::move(lhs);
+			++itr;
+			node->rhs = try_build_value(itr);
+			lhs = std::move(node);
+		}
+		else {
+			return lhs;
+		}
 	}
-	else {
-		return lhs;
-	}
-	++itr;
-	std::unique_ptr<ast_node_base> rhs = try_build_value(itr);
-	return std::make_unique<ast_node_bin>(op, std::move(lhs), std::move(rhs));
+	assert(false);
+	return nullptr;
 }
 
 std::unique_ptr<ast_node_base> parser::try_build_plusminus_node(std::vector<lexer::token>::const_iterator& itr) {
@@ -32,18 +39,23 @@ std::unique_ptr<ast_node_base> parser::try_build_plusminus_node(std::vector<lexe
 		return lhs;
 	}
 
+	std::unique_ptr<ast_node_bin> node;
 	std::string op;
-	if (itr->type == lexer::token_type::sign &&
-		(itr->raw == "+" || itr->raw == "-")) {
-		op = itr->raw;
+	while (lhs) {
+		if (itr->raw == "+" || itr->raw == "-") {
+			node = std::make_unique<ast_node_bin>();
+			node->op = itr->raw[0];
+			node->lhs = std::move(lhs);
+			++itr;
+			node->rhs = try_build_timedivide_node(itr);
+			lhs = std::move(node);
+		}
+		else {
+			return lhs;
+		}
 	}
-	else {
-		return lhs;
-	}
-	++itr;
-	std::unique_ptr<ast_node_base> rhs = try_build_timedivide_node(itr);
-	assert(rhs);
-	return std::make_unique<ast_node_bin>(op, std::move(lhs), std::move(rhs));
+	assert(false);
+	return nullptr;
 }
 
 std::unique_ptr<ast_node_base> parser::try_build_expr(std::vector<lexer::token>::const_iterator& itr) {
@@ -59,16 +71,24 @@ std::unique_ptr<ast_node_base> parser::try_build_expr(std::vector<lexer::token>:
 	++itr; /* skip semicolon */
 	return std::make_unique<ast_node_expr>(std::move(expr));
 }
+std::unique_ptr<ast_node_base> parser::try_build_return(std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::_return) {
+		return nullptr;
+	}
+	++itr;
+	std::unique_ptr<ast_node_base> node = try_build_expr(itr);
+	return std::make_unique<ast_node_return>(std::move(node));
+}
 
 std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::token>::const_iterator& itr) {
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
 	for (; itr->type != lexer::token_type::eof;) {
-		node = try_build_expr(itr);
-		if (node) {
+		if (node = try_build_expr(itr)) {
 			exprs.push_back(std::move(node));
-		}
-		else {
+		} else if (node = try_build_return(itr)) {
+			exprs.push_back(std::move(node));
+		} else {
 			break;
 		}
 		if (itr->type == lexer::token_type::sign &&
