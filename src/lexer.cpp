@@ -28,6 +28,7 @@ std::optional<lexer::token> lexer::try_parse_sign(std::string::const_iterator& i
 	case '*':
 	case '/':
 	case '=':
+	case ':':
 	case '\n':
 		str = *itr++;
 		return token{ .raw = str, .type = token_type::sign };
@@ -45,7 +46,11 @@ std::optional<lexer::token> lexer::try_parse_keyword(std::string::const_iterator
 		lexer::token_type type;
 	};
 	static keyword_info keywords[] = {
-		{ .str = "return", .type = lexer::token_type::_return }
+		{ .str = "return", .type = lexer::token_type::_return },
+		{ .str = "int", .type = lexer::token_type::_int },
+		{ .str = "float", .type = lexer::token_type::_float },
+		{ .str = "const", .type = lexer::token_type::_const },
+		{ .str = "mut", .type = lexer::token_type::_mut },
 	};
 	auto start_with = [&end](std::string keyword, std::string::const_iterator _itr) -> int {
 		int i = 0;
@@ -67,10 +72,26 @@ std::optional<lexer::token> lexer::try_parse_keyword(std::string::const_iterator
 		}
 	}
 	itr += max_len;
-	if (index == -1 || !std::isspace(*itr)) {
+	if (index == -1 || std::isalnum(*itr) || *itr == '_') {
 		return std::nullopt;
 	}
 	return token { .raw = keywords[index].str, .type = keywords[index].type };
+}
+
+std::optional<lexer::token> lexer::try_parse_identifier(std::string::const_iterator& itr, const std::string::const_iterator& end) noexcept {
+	std::string str;
+	if (!isalpha(*itr) && *itr != '_') {
+		return std::nullopt;
+	}
+	str += *itr++;
+	while (itr != end) {
+		if (isalnum(*itr) || *itr == '_') {
+			str += *itr++;
+		} else {
+			break;
+		}
+	}
+	return token { .raw = str, .type = lexer::token_type::identifier };
 }
 
 std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
@@ -87,6 +108,10 @@ std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 		}
 		if (std::optional<token> keyword = try_parse_keyword(itr, source.end())) {
 			toks.push_back(keyword.value());
+			continue;
+		}
+		if (std::optional<token> identifier = try_parse_identifier(itr, source.end())) {
+			toks.push_back(identifier.value());
 			continue;
 		}
 		if (std::isspace(*itr)) {

@@ -1,2 +1,2 @@
-1*3/4;
-return 6-3/4;
+const fugo : int = 4;
+return 6-8/fugo;

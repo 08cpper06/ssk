@@ -53,7 +53,7 @@ public:
 		lhs(std::move(lhs)),
 		rhs(std::move(rhs))
 	{}
-	~ast_node_bin() = default;
+	virtual ~ast_node_bin() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_bin::tag; }
 	virtual std::string log(std::string indent) {
@@ -83,7 +83,7 @@ public:
 	ast_node_expr(std::unique_ptr<ast_node_base>&& expr) :
 		expr(std::move(expr))
 	{}
-	~ast_node_expr() = default;
+	virtual ~ast_node_expr() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_expr::tag; }
 	virtual std::string log(std::string indent) {
@@ -103,7 +103,7 @@ public:
 	ast_node_return(std::unique_ptr<ast_node_base>&& value) :
 		value(std::move(value))
 	{}
-	~ast_node_return() = default;
+	virtual ~ast_node_return() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_return::tag; }
 	virtual std::string log(std::string indent) {
@@ -115,6 +115,52 @@ public:
 		return indent + "<expr>error</expr>\n";
 	}
 	std::unique_ptr<ast_node_base> value;
+};
+
+class ast_node_var_definition : public ast_node_base {
+public:
+	struct ast_var_definition_tag : public ast_base_tag {};
+	inline static constexpr ast_var_definition_tag tag;
+public:
+	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type) :
+		modifier(modifier),
+		name(name),
+		type(type)
+	{}
+	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, std::unique_ptr<ast_node_base>&& init_value) :
+		modifier(modifier),
+		name(name),
+		type(type),
+		init_value(std::move(init_value))
+	{}
+	virtual ~ast_node_var_definition() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_var_definition::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = "";
+		ret += indent + "<define type=\"";
+		switch (modifier) {
+		case lexer::token_type::_mut: ret += "mut"; break;
+		case lexer::token_type::_const: ret += "const"; break;
+		}
+		switch (type) {
+		case lexer::token_type::_int: ret += " int"; break;
+		case lexer::token_type::_float: ret += " float"; break;
+		}
+		ret += "\">\n";
+		ret += indent + "\t<name>" + name + "</name>\n";
+		if (init_value) {
+			ret += indent + "\t<init>\n";
+			ret += init_value->log(indent + "\t\t");
+			ret += indent + "\t</init>\n";
+		}
+		ret += indent + "</define>\n";
+		return ret;
+	}
+	lexer::token_type modifier;
+	std::string name;
+	lexer::token_type type;
+	std::unique_ptr<ast_node_base> init_value;
 };
 
 class ast_node_program : public ast_node_base {
@@ -151,6 +197,7 @@ public:
 	static std::unique_ptr<ast_node_base> try_build_plusminus_node(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_expr(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_return(std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_var_definition(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_program(std::vector<lexer::token>::const_iterator& itr);
 public:
 	static std::unique_ptr<ast_node_base> parse(const std::vector<lexer::token>& toks) noexcept;

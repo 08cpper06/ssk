@@ -3,7 +3,8 @@
 #include <cassert>
 
 std::unique_ptr<ast_node_base> parser::try_build_value(std::vector<lexer::token>::const_iterator& itr) {
-	if (itr->type != lexer::token_type::number) {
+	if (itr->type != lexer::token_type::number &&
+		itr->type != lexer::token_type::identifier) {
 		return nullptr;
 	}
 	return std::make_unique<ast_node_value>(*itr++);
@@ -80,6 +81,52 @@ std::unique_ptr<ast_node_base> parser::try_build_return(std::vector<lexer::token
 	return std::make_unique<ast_node_return>(std::move(node));
 }
 
+std::unique_ptr<ast_node_base> parser::try_build_var_definition(std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::_const &&
+		itr->type != lexer::token_type::_mut) {
+		return nullptr;
+	}
+	lexer::token_type modifier = itr->type;
+	std::vector<lexer::token>::const_iterator tmp = itr + 1;
+	if (tmp->type != lexer::token_type::identifier) {
+		return nullptr;
+	}
+	std::string name = tmp->raw;
+	++tmp;
+
+	if (tmp->raw != ":") {
+		return nullptr;
+	}
+	++tmp;
+
+	switch (tmp->type) {
+	case lexer::token_type::_int: break;
+	case lexer::token_type::_float: break;
+	default: return nullptr;
+	}
+	lexer::token_type type = tmp->type;
+	++tmp;
+
+	if (tmp->type == lexer::token_type::semicolon) {
+		itr = ++tmp;
+		return std::make_unique<ast_node_var_definition>(modifier, name, type);
+	}
+
+	if (tmp->raw != "=") {
+		std::cout << "expected `=`" << std::endl;
+		return nullptr;
+	}
+	++tmp;
+	std::unique_ptr<ast_node_base> init_value = try_build_expr(tmp);
+	if (!init_value) {
+		std::cout << "initial value is invalid" << std::endl;
+		return nullptr;
+	}
+
+	itr = tmp;
+	return std::make_unique<ast_node_var_definition>(modifier, name, type, std::move(init_value));
+}
+
 std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::token>::const_iterator& itr) {
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
@@ -88,12 +135,12 @@ std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::toke
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_return(itr)) {
 			exprs.push_back(std::move(node));
+		} else if (node = try_build_var_definition(itr)) {
+			exprs.push_back(std::move(node));
+		} else if (itr->raw == "\n") {
+			++itr;
 		} else {
 			break;
-		}
-		if (itr->type == lexer::token_type::sign &&
-			itr->raw == "\n") {
-			++itr;
 		}
 	}
 	return std::make_unique<ast_node_program>(std::move(exprs));

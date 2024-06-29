@@ -4,7 +4,18 @@
 
 
 int runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) {
-	if (ast_node_return* _return = dynamic_cast<ast_node_return*>(node.get())) {
+	if (ast_node_var_definition* var_definition = dynamic_cast<ast_node_var_definition*>(node.get())) {
+		if (con.var_table.find(var_definition->name) != con.var_table.end()) {
+			std::cout << "runtime error: variable double definition (" << var_definition->name << ")" << std::endl;
+			abort();
+		}
+		int value = 0;
+		if (var_definition->init_value) {
+			value = evaluate(var_definition->init_value);
+		}
+		con.var_table.insert({ var_definition->name, context::info { .modifier = var_definition->modifier, .type = var_definition->type, .value = value} });
+		return con.return_code;
+	} else if (ast_node_return* _return = dynamic_cast<ast_node_return*>(node.get())) {
 		con.return_code = evaluate(_return->value, con);
 		con.is_abort = true;
 	} else if (ast_node_program* program = dynamic_cast<ast_node_program*>(node.get())) {
@@ -24,9 +35,18 @@ int runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) 
 		case '/': con.return_code = evaluate(bin->lhs, con) / evaluate(bin->rhs, con); break;
 		}
 	} else if (ast_node_value* value = dynamic_cast<ast_node_value*>(node.get())) {
-		return std::atoi(value->value.raw.c_str());
+		if (value->value.type == lexer::token_type::identifier) {
+			std::map<std::string, context::info>::const_iterator itr = con.var_table.find(value->value.raw);
+			if (itr == con.var_table.end()) {
+				std::cout << "runtime error: undefined method (" << value->value.raw << ")" << std::endl;
+				abort();
+			}
+			return itr->second.value;
+		} else {
+			return std::atoi(value->value.raw.c_str());
+		}
 	} else {
-		std::cout << "runtime error" << std::endl;
+		std::cout << "runtime error: unknown expression" << std::endl;
 		abort();
 	}
 	return con.return_code;
