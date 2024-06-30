@@ -5,3 +5,6 @@ HelloWorld.
 ```
 ./ssk ../sample.ssk
 ```
+
+# Lexical conventions
+<a ref="./grammar.md">this</a>
