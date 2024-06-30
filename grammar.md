@@ -88,3 +88,6 @@
 
 <b>*literal*</b>:<br>
 &emsp;<b>*number*</b><br>
+&emsp;<b>*number*</b> . <b>*number*</b><br>
+&emsp;. <b>*number*</b><br>
+&emsp;<b>*number*</b> .<br>
