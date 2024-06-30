@@ -66,7 +66,6 @@
 
 ## Expression
 <b>*expression*</b>:<br>
-&emsp;<b>*value*</b><br>
 &emsp;<b>*expression*</b> <b>*assignment-expression*</b> <b>*expression*</b><br>
 
 <b>*assignment-expression*</b>:<br>
@@ -79,10 +78,9 @@
 &emsp;<b>*additive-expression*</b> - <b>*multiplicative-expression*</b><br>
 
 <b>*multiplicative-expression*</b>:<br>
-&emsp;<b>*literal*</b><br>
-&emsp;<b>*multiplicative-expression*</b> * <b>*literal*</b><br>
-&emsp;<b>*multiplicative-expression*</b> / <b>*literal*</b><br>
+&emsp;<b>*value*</b><br>
+&emsp;<b>*multiplicative-expression*</b> * <b>*value*</b><br>
+&emsp;<b>*multiplicative-expression*</b> / <b>*value*</b><br>
 
 <b>*literal*</b>:<br>
 &emsp;<b>*number*</b><br>
-&emsp;<b>*identifier*</b><br>
