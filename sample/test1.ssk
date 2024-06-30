@@ -1,5 +1,5 @@
 mut fugo : float = 10.5;
-const hoge:float = 10.5;
+const hoge: float = 10.;
 {
 	mut test : int = 10;
 }

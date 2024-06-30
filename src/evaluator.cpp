@@ -25,7 +25,7 @@ std::map<std::string, context::info>::iterator ast_evaluator::find_var(context& 
 }
 
 int ast_node_error::evaluate(context& con) {
-	std::cout << "runtime error: syntax error(" << text << ")" << std::endl;
+	std::cout << "runtime error (" << point.line << ", " << point.col << "): syntax error(" << text << ")" << std::endl;
 	abort();
 }
 
@@ -33,7 +33,7 @@ int ast_node_value::evaluate(context& con) {
 	if (value.type == lexer::token_type::identifier) {
 		std::map<std::string, context::info>::const_iterator itr = find_var(con, value.raw);
 		if (itr == con.var_table.end()) {
-			std::cout << "runtime error: undefined method (" << value.raw << ")" << std::endl;
+			std::cout << "runtime error (" << value.point.line << ", " << value.point.col << "): undefined method(" << value.raw << ")" << std::endl;
 			abort();
 		}
 		con.stack.push_back(itr->second.value);
@@ -64,20 +64,20 @@ int ast_node_bin::evaluate(context& con) {
 		if (is_a<ast_node_value>(lhs.get())) {
 			ast_node_value* value = static_cast<ast_node_value*>(lhs.get());
 			if (value->value.type != lexer::token_type::identifier) {
-				std::cout << "runtime error: lhs should be referencer" << std::endl;
+				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): lhs should be referencer" << std::endl;
 				abort();
 			}
 			std::map<std::string, context::info>::iterator itr = find_var(con, value->value.raw);
 			if (itr == con.var_table.end()) {
-				std::cout << "runtime error: not found method (" << value->value.raw << ")" << std::endl;
+				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): not found method(" << value->value.raw << ")" << std::endl;
 				abort();
 			}
 			if (itr->second.modifier == lexer::token_type::_const) {
-				std::cout << "runtime error: not constant value (" << value->value.raw << ")" << std::endl;
+				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): not constant value(" << value->value.raw << ")" << std::endl;
 				abort();
 			}
 			if (itr->second.value.type() != rhs_value.type()) {
-				std::cout << "runtime error: assign different type (`" << itr->second.value.type().name() << "` != `" << rhs_value.type().name() << "`)" << std::endl;
+				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): assign different type(`" << itr->second.value.type().name() << "` != `" << rhs_value.type().name() << "`)" << std::endl;
 				abort();
 			}
 			itr->second.value = std::move(rhs_value);
@@ -86,7 +86,7 @@ int ast_node_bin::evaluate(context& con) {
 	}
 
 	if (lhs_value.type() != rhs_value.type()) {
-		std::cout << "runtime error: assign different type (`" << lhs_value.type().name() << "` " << op << " `" << rhs_value.type().name() << "`)" << std::endl;
+		std::cout << "runtime error (" << lhs->point.line << "," << lhs->point.col << "): assign different type(`" << lhs_value.type().name() << "` " << op << " `" << rhs_value.type().name() << "`)" << std::endl;
 		abort();
 	} 
 
@@ -131,17 +131,17 @@ int ast_node_block::evaluate(context& con) {
 int ast_node_var_definition::evaluate(context& con) {
 	std::string encoded_name = encode(con, name);
 	if (con.var_table.find(encoded_name) != con.var_table.end()) {
-		std::cout << "runtime error: variable double definition (" << name << ")" << std::endl;
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): variable double definition (" << name << ")" << std::endl;
 		abort();
 	}
 	std::any value = 0;
 	if (init_value) {
 		con.return_code = init_value->evaluate(con);
 		if (con.stack.back().type() == typeid(int) && type != lexer::token_type::_int) {
-			std::cout << "runtime error: initial value is not float (" << name << ")" << std::endl;
+			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
 			abort();
 		} else if (con.stack.back().type() == typeid(float) && type != lexer::token_type::_float) {
-			std::cout << "runtime error: initial value is not int (" << name << ")" << std::endl;
+			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not int(" << name << ")" << std::endl;
 			abort();
 		}
 		con.var_table.insert({ encoded_name, context::info { .modifier = modifier, .type = type, .value = con.stack.back() }});

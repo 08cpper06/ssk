@@ -24,6 +24,8 @@ public:
 		return "";
 	}
 	virtual int evaluate(context& con) { return con.return_code; }
+
+	code_point point { 0, 0 };
 };
 
 class ast_node_error : public ast_node_base {
@@ -31,9 +33,11 @@ public:
 	struct ast_error_tag : public ast_base_tag {};
 	inline static constexpr ast_error_tag tag;
 public:
-	ast_node_error(const std::string& text) :
+	ast_node_error(const std::string& text, code_point point) :
 		text(text)
-	{}
+	{
+		this->point = point;
+	}
 	virtual ~ast_node_error() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_error::tag; }
@@ -49,9 +53,11 @@ public:
 	struct ast_value_tag : public ast_base_tag {};
 	inline static constexpr ast_value_tag tag;
 public:
-	ast_node_value(const lexer::token& value) :
+	ast_node_value(const lexer::token& value, code_point point) :
 		value(value)
-	{}
+	{
+		this->point = point;
+	}
 	virtual ~ast_node_value() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_value::tag; }
@@ -68,11 +74,13 @@ public:
 	inline static constexpr ast_bin_tag tag;
 public:
 	ast_node_bin() = default;
-	ast_node_bin(const std::string& op, std::unique_ptr<ast_node_base>&& lhs, std::unique_ptr<ast_node_base>&& rhs) :
+	ast_node_bin(const std::string& op, std::unique_ptr<ast_node_base>&& lhs, std::unique_ptr<ast_node_base>&& rhs, code_point point) :
 		op(op),
 		lhs(std::move(lhs)),
 		rhs(std::move(rhs))
-	{}
+	{
+		this->point = point;
+	}
 	virtual ~ast_node_bin() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_bin::tag; }
@@ -101,9 +109,11 @@ public:
 	struct ast_expr_tag : public ast_base_tag {};
 	inline static constexpr ast_expr_tag tag;
 public:
-	ast_node_expr(std::unique_ptr<ast_node_base>&& expr) :
+	ast_node_expr(std::unique_ptr<ast_node_base>&& expr, code_point point) :
 		expr(std::move(expr))
-	{}
+	{
+		this->point = point;
+	}
 	virtual ~ast_node_expr() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_expr::tag; }
@@ -122,9 +132,11 @@ public:
 	struct ast_return_tag : public ast_base_tag {};
 	inline static constexpr ast_return_tag tag;
 public:
-	ast_node_return(std::unique_ptr<ast_node_base>&& value) :
+	ast_node_return(std::unique_ptr<ast_node_base>&& value, code_point point) :
 		value(std::move(value))
-	{}
+	{
+		this->point = point;
+	}
 	virtual ~ast_node_return() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_return::tag; }
@@ -151,14 +163,18 @@ public:
 		return "block_" + std::to_string(i++);
 	}
 public:
-	ast_node_block(std::vector<std::unique_ptr<ast_node_base>>&& exprs) :
+	ast_node_block(std::vector<std::unique_ptr<ast_node_base>>&& exprs, code_point point) :
 		exprs(std::move(exprs)),
 		block_name(generate_blockname())
-	{}
-	ast_node_block(std::vector<std::unique_ptr<ast_node_base>>&& exprs, const std::string& block_name) :
+	{
+		this->point = point;
+	}
+	ast_node_block(std::vector<std::unique_ptr<ast_node_base>>&& exprs, const std::string& block_name, code_point point) :
 		exprs(std::move(exprs)),
 		block_name(block_name)
-	{}
+	{
+		this->point = point;
+	}
 	virtual ~ast_node_block() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_block::tag; }
@@ -179,17 +195,21 @@ public:
 	struct ast_var_definition_tag : public ast_base_tag {};
 	inline static constexpr ast_var_definition_tag tag;
 public:
-	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type) :
+	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, code_point point) :
 		modifier(modifier),
 		name(name),
 		type(type)
-	{}
-	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, std::unique_ptr<ast_node_base>&& init_value) :
+	{
+		this->point = point;
+	}
+	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, std::unique_ptr<ast_node_base>&& init_value, code_point point) :
 		modifier(modifier),
 		name(name),
 		type(type),
 		init_value(std::move(init_value))
-	{}
+	{
+		this->point = point;
+	}
 	virtual ~ast_node_var_definition() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_var_definition::tag; }
@@ -226,9 +246,11 @@ public:
 	struct ast_expr_tag : public ast_base_tag {};
 	inline static constexpr ast_expr_tag tag;
 public:
-	ast_node_program(std::vector<std::unique_ptr<ast_node_base>>&& exprs) :
+	ast_node_program(std::vector<std::unique_ptr<ast_node_base>>&& exprs, code_point point) :
 		exprs(std::move(exprs))
-	{}
+	{
+		this->point = point;
+	}
 	~ast_node_program() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_expr::tag; }

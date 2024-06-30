@@ -2,27 +2,32 @@
 #include <cassert>
 
 
-std::optional<lexer::token> lexer::try_parse_number(std::string::const_iterator& itr) noexcept {
+std::optional<lexer::token> lexer::try_parse_number(lexer::context& con) noexcept {
 	std::string tok;
 	bool has_point = false;
-	while (*itr) {
-		if (*itr >= '0' && *itr <= '9') {
-			tok += *itr;
+	while (*con.itr) {
+		if (*con.itr >= '0' && *con.itr <= '9') {
+			tok += *con.itr;
 		}
-		else if (!has_point && *itr == '.') {
-			tok += *itr;
+		else if (!has_point && *con.itr == '.') {
+			tok += *con.itr;
 			has_point = true;
 		}
 		else {
 			break;
 		}
-		++itr;
+		++con.point.col;
+		++con.itr;
 	}
-	return tok.empty() ? std::nullopt : std::optional<token>(token{ .raw = std::move(tok), .type = token_type::number });
+	return tok.empty() ? std::nullopt : std::optional<token>(token{ .raw = std::move(tok), .type = token_type::number, .point = con.point });
 }
-std::optional<lexer::token> lexer::try_parse_sign(std::string::const_iterator& itr) noexcept {
+std::optional<lexer::token> lexer::try_parse_sign(lexer::context& con) noexcept {
 	std::string str;
-	switch (*itr) {
+	switch (*con.itr) {
+	case '\n':
+		++con.point.line;
+		con.point.col = 0;
+		[[fallthrough]];
 	case '+':
 	case '-':
 	case '*':
@@ -31,18 +36,19 @@ std::optional<lexer::token> lexer::try_parse_sign(std::string::const_iterator& i
 	case ':':
 	case '{':
 	case '}':
-	case '\n':
-		str = *itr++;
-		return token{ .raw = str, .type = token_type::sign };
+		str = *con.itr++;
+		++con.point.col;
+		return token{ .raw = str, .type = token_type::sign, .point = con.point };
 	case ';':
-		str = *itr++;
-		return token{ .raw = str, .type = token_type::semicolon };
+		str = *con.itr++;
+		++con.point.col;
+		return token{ .raw = str, .type = token_type::semicolon, .point = con.point };
 	default:
 		return std::nullopt;
 	}
 }
 
-std::optional<lexer::token> lexer::try_parse_keyword(std::string::const_iterator& itr, const std::string::const_iterator& end) noexcept {
+std::optional<lexer::token> lexer::try_parse_keyword(lexer::context& con) noexcept {
 	struct keyword_info {
 		std::string str;
 		lexer::token_type type;
@@ -54,10 +60,10 @@ std::optional<lexer::token> lexer::try_parse_keyword(std::string::const_iterator
 		{ .str = "const", .type = lexer::token_type::_const },
 		{ .str = "mut", .type = lexer::token_type::_mut },
 	};
-	auto start_with = [&end](std::string keyword, std::string::const_iterator _itr) -> int {
+	auto start_with = [&con](std::string keyword, std::string::const_iterator _itr) -> int {
 		int i = 0;
 		for (i; keyword[i]; ++i) {
-			if (_itr == end ||
+			if (_itr == con.end ||
 				*_itr != keyword[i]) {
 				return 0;
 			}
@@ -67,64 +73,77 @@ std::optional<lexer::token> lexer::try_parse_keyword(std::string::const_iterator
 	};
 	int index = -1, max_len = 0, len = 0;
 	for (int i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i) {
-		len = start_with(keywords[i].str, itr);
+		len = start_with(keywords[i].str, con.itr);
 		if (len && max_len < len) {
 			index = i;
 			max_len = len;
 		}
 	}
-	itr += max_len;
-	if (index == -1 || std::isalnum(*itr) || *itr == '_') {
+	con.itr += max_len;
+	code_point point = con.point;
+	con.point.col += max_len;
+	if (index == -1 || std::isalnum(*con.itr) || *con.itr == '_') {
 		return std::nullopt;
 	}
-	return token { .raw = keywords[index].str, .type = keywords[index].type };
+	return token { .raw = keywords[index].str, .type = keywords[index].type, .point = point };
 }
 
-std::optional<lexer::token> lexer::try_parse_identifier(std::string::const_iterator& itr, const std::string::const_iterator& end) noexcept {
+std::optional<lexer::token> lexer::try_parse_identifier(lexer::context& con) noexcept {
 	std::string str;
-	if (!isalpha(*itr) && *itr != '_') {
+	if (!isalpha(*con.itr) && *con.itr != '_') {
 		return std::nullopt;
 	}
-	str += *itr++;
-	while (itr != end) {
-		if (isalnum(*itr) || *itr == '_') {
-			str += *itr++;
+	str += *con.itr++;
+	++con.point.col;
+	while (con.itr != con.end) {
+		if (isalnum(*con.itr) || *con.itr == '_') {
+			str += *con.itr++;
+			++con.point.col;
 		} else {
 			break;
 		}
 	}
-	return token { .raw = str, .type = lexer::token_type::identifier };
+	if (str == "_") {
+		return token { .raw = str, .type = lexer::token_type::semicolon, .point = con.point };
+	}
+	return token { .raw = str, .type = lexer::token_type::identifier, .point = con.point };
 }
 
 std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
-	std::string::const_iterator itr = source.begin();
+	lexer::context con { .point = { .line = 1, .col = 0 }, .itr = source.begin(), .end = source.end() };
 	std::vector<token> toks;
-	while (itr != source.end()) {
-		if (std::optional<token> number = try_parse_number(itr)) {
+	while (con.itr != source.end()) {
+		if (std::optional<token> number = try_parse_number(con)) {
 			toks.push_back(number.value());
 			continue;
 		}
-		if (std::optional<token> sign = try_parse_sign(itr)) {
+		if (std::optional<token> sign = try_parse_sign(con)) {
 			toks.push_back(sign.value());
 			continue;
 		}
-		if (std::optional<token> keyword = try_parse_keyword(itr, source.end())) {
+		if (std::optional<token> keyword = try_parse_keyword(con)) {
 			toks.push_back(keyword.value());
 			continue;
 		}
-		if (std::optional<token> identifier = try_parse_identifier(itr, source.end())) {
+		if (std::optional<token> identifier = try_parse_identifier(con)) {
 			toks.push_back(identifier.value());
 			continue;
 		}
-		if (std::isspace(*itr)) {
+		if (std::isspace(*con.itr)) {
 			do {
-				++itr;
-			} while (std::isspace(*itr));
+				if (*con.itr == '\n') {
+					++con.point.line;
+					con.point.col = 0;
+				} else {
+					++con.point.col;
+				}
+				++con.itr;
+			} while (std::isspace(*con.itr));
 			continue;
 		}
-		assert(!*itr);
+		assert(!*con.itr);
 	}
 
-	toks.push_back(token{ .raw = '\0', .type = token_type::eof});
+	toks.push_back(token{ .raw = '\0', .type = token_type::eof, .point = con.point });
 	return toks;
 }
