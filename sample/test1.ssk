@@ -1,6 +1,6 @@
-;
 mut fugo : int = 10;
+const hoge:int = 1000;
 {
 	mut fugo : int = 100;
 }
-return 6-8+fugo;
+return 6-hoge+fugo;

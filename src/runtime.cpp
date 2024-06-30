@@ -48,7 +48,9 @@ int runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) 
 		con.var_table.insert({ name, context::info { .modifier = var_definition->modifier, .type = var_definition->type, .value = value} });
 		return con.return_code;
 	} else if (ast_node_return* _return = dynamic_cast<ast_node_return*>(node.get())) {
-		con.return_code = evaluate(_return->value, con);
+		if (_return->value) {
+			con.return_code = evaluate(_return->value, con);
+		}
 		con.is_abort = true;
 	} else if (ast_node_program* program = dynamic_cast<ast_node_program*>(node.get())) {
 		for (const std::unique_ptr<ast_node_base>& item : program->exprs) {

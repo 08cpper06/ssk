@@ -23,7 +23,7 @@ public:
 private:
 	static std::string encode(const context& con, const std::string& name);
 	static std::map<std::string, context::info>::iterator find_var(context& con, const std::string name);
-	static int evaluate(const std::unique_ptr<ast_node_base>& node, context& con);
 public:
+	static int evaluate(const std::unique_ptr<ast_node_base>& node, context& con);
 	static int evaluate(const std::unique_ptr<ast_node_base>& node);
 };
