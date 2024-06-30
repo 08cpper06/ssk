@@ -88,7 +88,7 @@ std::unique_ptr<ast_node_base> parser::try_build_expr(std::vector<lexer::token>:
 	
 	if (itr->type != lexer::token_type::semicolon) {
 		std::cout << "not found semicolon" << std::endl;
-		return nullptr;
+		return std::make_unique<ast_node_error>("not found semicolon");
 	}
 	++itr; /* skip semicolon */
 	return std::make_unique<ast_node_expr>(std::move(expr));
@@ -110,20 +110,27 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(std::vector<lexe
 	lexer::token_type modifier = itr->type;
 	std::vector<lexer::token>::const_iterator tmp = itr + 1;
 	if (tmp->type != lexer::token_type::identifier) {
-		return nullptr;
+		itr = tmp;
+		std::cout << "expected identifier" << std::endl;
+		return std::make_unique<ast_node_error>("expected identifier");
 	}
 	std::string name = tmp->raw;
 	++tmp;
 
 	if (tmp->raw != ":") {
-		return nullptr;
+		itr = tmp;
+		std::cout << "expected `:`" << std::endl;
+		return std::make_unique<ast_node_error>("expected identifier");
 	}
 	++tmp;
 
 	switch (tmp->type) {
 	case lexer::token_type::_int: break;
 	case lexer::token_type::_float: break;
-	default: return nullptr;
+	default:
+		itr = tmp;
+		std::cout << "invalid type" << std::endl;
+		return std::make_unique<ast_node_error>("invalid type");
 	}
 	lexer::token_type type = tmp->type;
 	++tmp;
@@ -134,14 +141,16 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(std::vector<lexe
 	}
 
 	if (tmp->raw != "=") {
+		itr = tmp;
 		std::cout << "expected `=`" << std::endl;
-		return nullptr;
+		return std::make_unique<ast_node_error>("expected `=`");
 	}
 	++tmp;
 	std::unique_ptr<ast_node_base> init_value = try_build_expr(tmp);
 	if (!init_value) {
+		itr = tmp;
 		std::cout << "initial value is invalid" << std::endl;
-		return nullptr;
+		return std::make_unique<ast_node_error>("initial value is invalid");
 	}
 
 	itr = tmp;
@@ -158,7 +167,7 @@ std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::toke
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_var_definition(itr)) {
 			exprs.push_back(std::move(node));
-		} else if (itr->raw == "\n") {
+		} else if (isspace(itr->raw[0]) || itr->raw == ";") {
 			++itr;
 		} else {
 			break;

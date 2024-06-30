@@ -4,7 +4,10 @@
 
 
 int runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) {
-	if (ast_node_var_definition* var_definition = dynamic_cast<ast_node_var_definition*>(node.get())) {
+	if (ast_node_error* error = dynamic_cast<ast_node_error*>(node.get())) {
+		std::cout << "runtime error: syntax error(" << error->text << ")" << std::endl;
+		abort();
+	} else if (ast_node_var_definition* var_definition = dynamic_cast<ast_node_var_definition*>(node.get())) {
 		if (con.var_table.find(var_definition->name) != con.var_table.end()) {
 			std::cout << "runtime error: variable double definition (" << var_definition->name << ")" << std::endl;
 			abort();

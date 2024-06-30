@@ -25,6 +25,24 @@ public:
 
 };
 
+class ast_node_error : public ast_node_base {
+public:
+	struct ast_error_tag : public ast_base_tag {};
+	inline static constexpr ast_error_tag tag;
+public:
+	ast_node_error(const std::string& text) :
+		text(text)
+	{}
+	virtual ~ast_node_error() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_error::tag; }
+	virtual std::string log(std::string indent) {
+		return indent + "<error>" + text + "</error>\n";
+	}
+
+	std::string text;
+};
+
 class ast_node_value : public ast_node_base {
 public:
 	struct ast_value_tag : public ast_base_tag {};
