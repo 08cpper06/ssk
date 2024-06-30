@@ -41,7 +41,6 @@ std::unique_ptr<ast_node_base> parser::try_build_plusminus_node(std::vector<lexe
 	}
 
 	std::unique_ptr<ast_node_bin> node;
-	std::string op;
 	while (lhs) {
 		if (itr->raw == "+" || itr->raw == "-") {
 			node = std::make_unique<ast_node_bin>();
@@ -59,8 +58,30 @@ std::unique_ptr<ast_node_base> parser::try_build_plusminus_node(std::vector<lexe
 	return nullptr;
 }
 
+std::unique_ptr<ast_node_base> parser::try_build_assign(std::vector<lexer::token>::const_iterator& itr) {
+	std::unique_ptr<ast_node_base> lhs = try_build_plusminus_node(itr);
+	if (!lhs) {
+		return nullptr;
+	}
+	std::unique_ptr<ast_node_bin> node = nullptr;
+	while (lhs) {
+		if (itr->raw == "=") {
+			node = std::make_unique<ast_node_bin>();
+			node->op = itr->raw[0];
+			node->lhs = std::move(lhs);
+			++itr;
+			node->rhs = try_build_plusminus_node(itr);
+			lhs = std::move(node);
+		} else {
+			return lhs;
+		}
+	}
+	assert(false);
+	return nullptr;
+}
+
 std::unique_ptr<ast_node_base> parser::try_build_expr(std::vector<lexer::token>::const_iterator& itr) {
-	std::unique_ptr<ast_node_base> expr = try_build_plusminus_node(itr);
+	std::unique_ptr<ast_node_base> expr = try_build_assign(itr);
 	if (!expr) {
 		return nullptr;
 	}

@@ -1,2 +1,3 @@
-const fugo : int = 4;
-return 6-8/fugo;
+mut fugo : int;
+fugo = 10;
+return 6-8+fugo;

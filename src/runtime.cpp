@@ -33,6 +33,26 @@ int runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) 
 		case '-': con.return_code = evaluate(bin->lhs, con) - evaluate(bin->rhs, con); break;
 		case '*': con.return_code = evaluate(bin->lhs, con) * evaluate(bin->rhs, con); break;
 		case '/': con.return_code = evaluate(bin->lhs, con) / evaluate(bin->rhs, con); break;
+		case '=': {
+				if (ast_node_value* value = dynamic_cast<ast_node_value*>(bin->lhs.get())) {
+					if (value->value.type != lexer::token_type::identifier) {
+						std::cout << "runtime error: lhs should be referencer" << std::endl;
+						abort();
+					}
+					std::map<std::string, runtime::context::info>::iterator itr = con.var_table.find(value->value.raw);
+					if (itr == con.var_table.end()) {
+						std::cout << "runtime error: not found method (" << value->value.raw << ")" << std::endl;
+						abort();
+					}
+					if (itr->second.modifier == lexer::token_type::_const) {
+						std::cout << "runtime error: not constant value (" << value->value.raw << ")" << std::endl;
+						abort();
+					}
+					con.return_code = evaluate(bin->rhs, con);
+					itr->second.value = con.return_code;
+				}
+				break;
+			}
 		}
 	} else if (ast_node_value* value = dynamic_cast<ast_node_value*>(node.get())) {
 		if (value->value.type == lexer::token_type::identifier) {
@@ -41,7 +61,7 @@ int runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) 
 				std::cout << "runtime error: undefined method (" << value->value.raw << ")" << std::endl;
 				abort();
 			}
-			return itr->second.value;
+			return std::any_cast<int>(itr->second.value);
 		} else {
 			return std::atoi(value->value.raw.c_str());
 		}
