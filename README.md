@@ -7,4 +7,4 @@ HelloWorld.
 ```
 
 # Lexical conventions
-<a ref="./grammar.md">this</a>
+[this](https://github.com/08cpper06/ssk/blob/main/grammar.md)
