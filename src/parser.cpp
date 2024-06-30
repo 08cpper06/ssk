@@ -163,6 +163,41 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(std::vector<lexe
 	return std::make_unique<ast_node_var_definition>(modifier, name, type, std::move(init_value), point);
 }
 
+std::unique_ptr<ast_node_base> parser::try_build_if(std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::_if) {
+		return nullptr;
+	}
+	++itr;
+	if (itr->raw != "(") {
+		return std::make_unique<ast_node_error>("expected `(`", itr->point);
+	}
+	++itr;
+	std::unique_ptr<ast_node_base> cond = try_build_assign(itr);
+	if (itr->raw != ")") {
+		return std::make_unique<ast_node_error>("expected `)`", itr->point);
+	}
+	++itr;
+	std::unique_ptr<ast_node_base> true_block = try_build_block(itr);
+	if (true_block) {
+		if (ast_node_block* block = static_cast<ast_node_block*>(true_block.get())) {
+			block->block_name = "true_" + block->block_name;
+		}
+	}
+
+	if (itr->type != lexer::token_type::_else) {
+		return std::make_unique<ast_node_if>(std::move(cond), std::move(true_block));
+	}
+	++itr;
+	std::unique_ptr<ast_node_base> false_block = try_build_block(itr);
+	if (false_block) {
+		if (ast_node_block* block = static_cast<ast_node_block*>(false_block.get())) {
+			block->block_name = "false_" + block->block_name;
+		}
+	}
+
+	return std::make_unique<ast_node_if>(std::move(cond), std::move(true_block), std::move(false_block));
+}
+
 std::unique_ptr<ast_node_base> parser::try_build_block(std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->raw != "{") {
 		return nullptr;
@@ -171,16 +206,15 @@ std::unique_ptr<ast_node_base> parser::try_build_block(std::vector<lexer::token>
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
 	for (; itr->type != lexer::token_type::eof;) {
-		if (node = try_build_expr(itr)) {
+		if (node = try_build_if(itr)) {
 			exprs.push_back(std::move(node));
-		}
-		else if (node = try_build_return(itr)) {
+		} else if (node = try_build_expr(itr)) {
 			exprs.push_back(std::move(node));
-		}
-		else if (node = try_build_var_definition(itr)) {
+		} else if (node = try_build_return(itr)) {
 			exprs.push_back(std::move(node));
-		}
-		else if (isspace(itr->raw[0]) || itr->raw == ";") {
+		} else if (node = try_build_var_definition(itr)) {
+			exprs.push_back(std::move(node));
+		} else if (isspace(itr->raw[0]) || itr->raw == ";") {
 			++itr;
 		}
 		else {
@@ -198,7 +232,9 @@ std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::toke
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
 	for (; itr->type != lexer::token_type::eof;) {
-		if (node = try_build_expr(itr)) {
+		if (node = try_build_if(itr)) {
+			exprs.push_back(std::move(node));
+		} else if (node = try_build_expr(itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_return(itr)) {
 			exprs.push_back(std::move(node));

@@ -179,11 +179,11 @@ public:
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_block::tag; }
 	virtual std::string log(std::string indent) {
-		std::string ret = indent + "<block>\n";
+		std::string ret = indent + "<" + block_name + ">\n";
 		for (const std::unique_ptr<ast_node_base>& item : exprs) {
 			ret += item->log(indent + '\t');
 		}
-		return ret + indent + "</block>\n";
+		return ret + indent + "</" + block_name + ">\n";
 	}
 	virtual int evaluate(context& con);
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
@@ -241,6 +241,49 @@ public:
 	std::unique_ptr<ast_node_base> init_value;
 };
 
+class ast_node_if : public ast_node_base {
+public:
+	struct ast_if_tag : public ast_base_tag {};
+	inline static constexpr ast_if_tag tag;
+public:
+	ast_node_if(std::unique_ptr<ast_node_base>&& condition_block, std::unique_ptr<ast_node_base>&& true_block) :
+		condition_block(std::move(condition_block)),
+		true_block(std::move(true_block)),
+		false_block(nullptr)
+	{}
+	ast_node_if(std::unique_ptr<ast_node_base>&& condition_block, std::unique_ptr<ast_node_base>&& true_block, std::unique_ptr<ast_node_base>&& false_block) :
+		condition_block(std::move(condition_block)),
+		true_block(std::move(true_block)),
+		false_block(std::move(false_block))
+	{}
+	~ast_node_if() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_if::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = "";
+		ret += indent + "<if>\n";
+		ret += indent + "\t<condition>\n";
+		ret += condition_block->log(indent + "\t\t");
+		ret += indent + "\t</condition>\n";
+		if (true_block) {
+			ret += true_block->log(indent + "\t");
+		}
+		else {
+			ret += indent + "\t<expr>error</expr>\n";
+		}
+		if (false_block) {
+			ret += false_block->log(indent + "\t");
+		}
+		ret += indent + "</if>\n";
+		return ret;
+	}
+	virtual int evaluate(context& con);
+
+	std::unique_ptr<ast_node_base> condition_block;
+	std::unique_ptr<ast_node_base> true_block;
+	std::unique_ptr<ast_node_base> false_block;
+};
+
 class ast_node_program : public ast_node_base {
 public:
 	struct ast_expr_tag : public ast_base_tag {};
@@ -280,6 +323,7 @@ public:
 	static std::unique_ptr<ast_node_base> try_build_return(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_var_definition(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_assign(std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_if(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_block(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_program(std::vector<lexer::token>::const_iterator& itr);
 public:

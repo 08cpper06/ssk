@@ -24,6 +24,9 @@ public:
 		_mut,
 
 		_return,
+		_if,
+		_else,
+
 		_int,
 		_float,
 

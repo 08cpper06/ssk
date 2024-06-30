@@ -36,6 +36,8 @@ std::optional<lexer::token> lexer::try_parse_sign(lexer::context& con) noexcept 
 	case ':':
 	case '{':
 	case '}':
+	case '(':
+	case ')':
 		str = *con.itr++;
 		++con.point.col;
 		return token{ .raw = str, .type = token_type::sign, .point = con.point };
@@ -59,6 +61,8 @@ std::optional<lexer::token> lexer::try_parse_keyword(lexer::context& con) noexce
 		{ .str = "float", .type = lexer::token_type::_float },
 		{ .str = "const", .type = lexer::token_type::_const },
 		{ .str = "mut", .type = lexer::token_type::_mut },
+		{ .str = "if", .type = lexer::token_type::_if },
+		{ .str = "else", .type = lexer::token_type::_else },
 	};
 	auto start_with = [&con](std::string keyword, std::string::const_iterator _itr) -> int {
 		int i = 0;

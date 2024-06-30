@@ -155,6 +155,17 @@ int ast_node_var_definition::evaluate(context& con) {
 	con.var_table.insert({ encoded_name, context::info { .modifier = modifier, .type = type, .value = value }});
 	return con.return_code;
 }
+
+int ast_node_if::evaluate(context& con) {
+	con.return_code = condition_block->evaluate(con);
+	if (con.return_code) {
+		con.return_code = true_block->evaluate(con);
+	} else if (false_block) {
+		con.return_code = false_block->evaluate(con);
+	}
+	return con.return_code;
+}
+
 int ast_node_program::evaluate(context& con) {
 	for (const std::unique_ptr<ast_node_base>& item : exprs) {
 		con.return_code = item->evaluate(con);
