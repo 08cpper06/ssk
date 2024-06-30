@@ -2,6 +2,7 @@
 
 #include <memory>
 #include "lexer.hpp"
+#include "evaluator.hpp"
 
 
 template <class Type, class UType>
@@ -9,7 +10,7 @@ bool is_a(UType target) {
 	return target->get_tag() == &Type::tag;
 }
 
-class ast_node_base {
+class ast_node_base : public ast_evaluator {
 public:
 	struct ast_base_tag {};
 	inline static constexpr ast_base_tag tag;
@@ -22,7 +23,7 @@ public:
 	virtual std::string log(std::string indent) {
 		return "";
 	}
-
+	virtual int evaluate(context& con) { return con.return_code; }
 };
 
 class ast_node_error : public ast_node_base {
@@ -39,7 +40,7 @@ public:
 	virtual std::string log(std::string indent) {
 		return indent + "<error>" + text + "</error>\n";
 	}
-
+	virtual int evaluate(context& con);
 	std::string text;
 };
 
@@ -57,6 +58,7 @@ public:
 	virtual std::string log(std::string indent) {
 		return indent + "<value>" + value.raw + "</value>\n";
 	}
+	virtual int evaluate(context& con);
 	lexer::token value;
 };
 
@@ -88,6 +90,7 @@ public:
 		}
 		return ret + indent + "</bin>\n";
 	}
+	virtual int evaluate(context& con);
 	std::string op;
 	std::unique_ptr<ast_node_base> lhs;
 	std::unique_ptr<ast_node_base> rhs;
@@ -110,6 +113,7 @@ public:
 		}
 		return indent + "<expr>error</expr>\n";
 	}
+	virtual int evaluate(context& con);
 	std::unique_ptr<ast_node_base> expr;
 };
 
@@ -132,6 +136,7 @@ public:
 		}
 		return indent + "<expr>error</expr>\n";
 	}
+	virtual int evaluate(context& con);
 	std::unique_ptr<ast_node_base> value;
 };
 
@@ -164,7 +169,7 @@ public:
 		}
 		return ret + indent + "</block>\n";
 	}
-
+	virtual int evaluate(context& con);
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::string block_name;
 };
@@ -209,6 +214,7 @@ public:
 		ret += indent + "</define>\n";
 		return ret;
 	}
+	virtual int evaluate(context& con);
 	lexer::token_type modifier;
 	std::string name;
 	lexer::token_type type;
@@ -239,6 +245,7 @@ public:
 		ret += indent + "</program>\n";
 		return ret;
 	}
+	virtual int evaluate(context& con);
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 };
 

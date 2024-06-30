@@ -1,6 +1,6 @@
-mut fugo : int = 10;
-const hoge:int = 1000;
+mut fugo : float = 10.5;
+const hoge:float = 10.5;
 {
-	mut fugo : int = 100;
+	mut test : int = 10;
 }
-return 6-hoge+fugo;
+return hoge+fugo;

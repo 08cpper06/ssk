@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}
 	./src/lexer.cpp
 	./src/parser.cpp
 	./src/runtime.cpp
+	./src/evaluator.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ./include)
