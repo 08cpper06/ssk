@@ -157,6 +157,37 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(std::vector<lexe
 	return std::make_unique<ast_node_var_definition>(modifier, name, type, std::move(init_value));
 }
 
+std::unique_ptr<ast_node_base> parser::try_build_block(std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->raw != "{") {
+		return nullptr;
+	}
+	++itr;
+	std::vector<std::unique_ptr<ast_node_base>> exprs;
+	std::unique_ptr<ast_node_base> node;
+	for (; itr->type != lexer::token_type::eof;) {
+		if (node = try_build_expr(itr)) {
+			exprs.push_back(std::move(node));
+		}
+		else if (node = try_build_return(itr)) {
+			exprs.push_back(std::move(node));
+		}
+		else if (node = try_build_var_definition(itr)) {
+			exprs.push_back(std::move(node));
+		}
+		else if (isspace(itr->raw[0]) || itr->raw == ";") {
+			++itr;
+		}
+		else {
+			break;
+		}
+	}
+	if (itr->raw != "}") {
+		return std::make_unique<ast_node_error>("expeceted `}`");
+	}
+	++itr;
+	return std::make_unique<ast_node_block>(std::move(exprs));
+}
+
 std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::token>::const_iterator& itr) {
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
@@ -166,6 +197,8 @@ std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::toke
 		} else if (node = try_build_return(itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_var_definition(itr)) {
+			exprs.push_back(std::move(node));
+		} else if (node = try_build_block(itr)) {
 			exprs.push_back(std::move(node));
 		} else if (isspace(itr->raw[0]) || itr->raw == ";") {
 			++itr;

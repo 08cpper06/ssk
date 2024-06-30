@@ -1,4 +1,6 @@
 ;
-mut fugo : int;
-fugo = 10;
+mut fugo : int = 10;
+{
+	mut fugo : int = 100;
+}
 return 6-8+fugo;

@@ -29,6 +29,8 @@ std::optional<lexer::token> lexer::try_parse_sign(std::string::const_iterator& i
 	case '/':
 	case '=':
 	case ':':
+	case '{':
+	case '}':
 	case '\n':
 		str = *itr++;
 		return token{ .raw = str, .type = token_type::sign };

@@ -135,6 +135,40 @@ public:
 	std::unique_ptr<ast_node_base> value;
 };
 
+class ast_node_block : public ast_node_base {
+public:
+	struct ast_return_tag : public ast_base_tag {};
+	inline static constexpr ast_return_tag tag;
+
+public:
+	static std::string generate_blockname() {
+		static int i = 0;
+		return "block_" + std::to_string(i++);
+	}
+public:
+	ast_node_block(std::vector<std::unique_ptr<ast_node_base>>&& exprs) :
+		exprs(std::move(exprs)),
+		block_name(generate_blockname())
+	{}
+	ast_node_block(std::vector<std::unique_ptr<ast_node_base>>&& exprs, const std::string& block_name) :
+		exprs(std::move(exprs)),
+		block_name(block_name)
+	{}
+	virtual ~ast_node_block() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_block::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = indent + "<block>\n";
+		for (const std::unique_ptr<ast_node_base>& item : exprs) {
+			ret += item->log(indent + '\t');
+		}
+		return ret + indent + "</block>\n";
+	}
+
+	std::vector<std::unique_ptr<ast_node_base>> exprs;
+	std::string block_name;
+};
+
 class ast_node_var_definition : public ast_node_base {
 public:
 	struct ast_var_definition_tag : public ast_base_tag {};
@@ -217,6 +251,7 @@ public:
 	static std::unique_ptr<ast_node_base> try_build_return(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_var_definition(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_assign(std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_block(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_program(std::vector<lexer::token>::const_iterator& itr);
 public:
 	static std::unique_ptr<ast_node_base> parse(const std::vector<lexer::token>& toks) noexcept;
