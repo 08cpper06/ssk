@@ -46,6 +46,11 @@
 &emsp;+ - * / = : ;<br>
 
 # Expression
+## If / Else
+<b>*if-expression*</b>:<br>
+&emsp;if ( <b>*expression*</b> ) <b>*block*</b><br>
+&emsp;if ( <b>*expression*</b> ) <b>*block*</b> else <b>*block*</b>
+
 ## Block
 <b>*block*</b>:<br>
 &emsp;{ <b>*stmt*</b> }

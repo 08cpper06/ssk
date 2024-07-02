@@ -91,12 +91,15 @@ int ast_node_bin::evaluate(context& con) {
 	} 
 
 	if (lhs_value.type() == typeid(float)) {
+		float result = 0.f;
 		switch (op[0]) {
-		case '+': con.return_code = static_cast<int>(std::any_cast<float>(lhs_value) + std::any_cast<float>(rhs_value)); break;
-		case '-': con.return_code = static_cast<int>(std::any_cast<float>(lhs_value) - std::any_cast<float>(rhs_value)); break;
-		case '*': con.return_code = static_cast<int>(std::any_cast<float>(lhs_value) * std::any_cast<float>(rhs_value)); break;
-		case '/': con.return_code = static_cast<int>(std::any_cast<float>(lhs_value) / std::any_cast<float>(rhs_value)); break;
+		case '+': result = std::any_cast<float>(lhs_value) + std::any_cast<float>(rhs_value); break;
+		case '-': result = std::any_cast<float>(lhs_value) - std::any_cast<float>(rhs_value); break;
+		case '*': result = std::any_cast<float>(lhs_value) * std::any_cast<float>(rhs_value); break;
+		case '/': result = std::any_cast<float>(lhs_value) / std::any_cast<float>(rhs_value); break;
 		}
+		con.return_code = static_cast<int>(result);
+		con.stack.push_back(result);
 	} else if (lhs_value.type() == typeid(int)) {
 		switch (op[0]) {
 		case '+': con.return_code = std::any_cast<int>(lhs_value) + std::any_cast<int>(rhs_value); break;
@@ -104,9 +107,9 @@ int ast_node_bin::evaluate(context& con) {
 		case '*': con.return_code = std::any_cast<int>(lhs_value) * std::any_cast<int>(rhs_value); break;
 		case '/': con.return_code = std::any_cast<int>(lhs_value) / std::any_cast<int>(rhs_value); break;
 		}
+		con.stack.push_back(con.return_code);
 	}
 
-	con.stack.push_back(con.return_code);
 	return con.return_code;
 }
 int ast_node_expr::evaluate(context& con) {
