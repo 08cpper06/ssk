@@ -91,11 +91,14 @@ int ast_node_bin::evaluate(context& con) {
 	} 
 
 	OBJECT result;
-	switch (op[0]) {
-		case '+': result = std::visit(operate_add_object {}, lhs_value, rhs_value); break;
-		case '-': result = std::visit(operate_sub_object {}, lhs_value, rhs_value); break;
-		case '*': result = std::visit(operate_mul_object {}, lhs_value, rhs_value); break;
-		case '/': result = std::visit(operate_div_object {}, lhs_value, rhs_value); break;
+	if (op == "+") {
+		result = std::visit(operate_add_object {}, lhs_value, rhs_value);
+	} else if (op == "-") {
+		result = std::visit(operate_sub_object {}, lhs_value, rhs_value);
+	} else if (op == "*") {
+		result = std::visit(operate_mul_object {}, lhs_value, rhs_value);
+	} else if (op == "/") {
+		result = std::visit(operate_div_object {}, lhs_value, rhs_value);
 	}
 
 	con.stack.push_back(result);
