@@ -43,10 +43,13 @@ private:
 		std::string::const_iterator itr;
 		std::string::const_iterator end;
 	};
+	struct keyword_info {
+		std::string str;
+		lexer::token_type type;
+	};
 public:
 	static std::optional<token> try_parse_number(context& con) noexcept;
-	static std::optional<token> try_parse_sign(context& con) noexcept;
-	static std::optional<token> try_parse_keyword(context& con) noexcept;
+	static std::optional<token> try_parse_sign_and_keyword(context& con) noexcept;
 	static std::optional<token> try_parse_identifier(context& con) noexcept;
 public:
 	static std::vector<token> tokenize(const std::string& source) noexcept;

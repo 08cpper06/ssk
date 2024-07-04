@@ -21,41 +21,21 @@ std::optional<lexer::token> lexer::try_parse_number(lexer::context& con) noexcep
 	}
 	return tok.empty() ? std::nullopt : std::optional<token>(token{ .raw = std::move(tok), .type = token_type::number, .point = con.point });
 }
-std::optional<lexer::token> lexer::try_parse_sign(lexer::context& con) noexcept {
-	std::string str;
-	switch (*con.itr) {
-	case '\n':
-		++con.point.line;
-		con.point.col = 0;
-		[[fallthrough]];
-	case '+':
-	case '-':
-	case '*':
-	case '/':
-	case '=':
-	case ':':
-	case '{':
-	case '}':
-	case '(':
-	case ')':
-		str = *con.itr++;
-		++con.point.col;
-		return token{ .raw = str, .type = token_type::sign, .point = con.point };
-	case ';':
-		str = *con.itr++;
-		++con.point.col;
-		return token{ .raw = str, .type = token_type::semicolon, .point = con.point };
-	default:
-		return std::nullopt;
-	}
-}
 
-std::optional<lexer::token> lexer::try_parse_keyword(lexer::context& con) noexcept {
-	struct keyword_info {
-		std::string str;
-		lexer::token_type type;
-	};
+std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& con) noexcept {
 	static keyword_info keywords[] = {
+		{ .str = ";", .type = lexer::token_type::semicolon },
+		{ .str = "+", .type = lexer::token_type::sign },
+		{ .str = "-", .type = lexer::token_type::sign },
+		{ .str = "*", .type = lexer::token_type::sign },
+		{ .str = "/", .type = lexer::token_type::sign },
+		{ .str = "=", .type = lexer::token_type::sign },
+		{ .str = ":", .type = lexer::token_type::sign },
+		{ .str = "{", .type = lexer::token_type::sign },
+		{ .str = "}", .type = lexer::token_type::sign },
+		{ .str = "(", .type = lexer::token_type::sign },
+		{ .str = ")", .type = lexer::token_type::sign },
+
 		{ .str = "return", .type = lexer::token_type::_return },
 		{ .str = "int", .type = lexer::token_type::_int },
 		{ .str = "float", .type = lexer::token_type::_float },
@@ -64,6 +44,12 @@ std::optional<lexer::token> lexer::try_parse_keyword(lexer::context& con) noexce
 		{ .str = "if", .type = lexer::token_type::_if },
 		{ .str = "else", .type = lexer::token_type::_else },
 	};
+	if (*con.itr == '\n') {
+		++con.itr;
+		++con.point.line;
+		con.point.col = 0;
+		return token { .raw = "\n", .type = token_type::sign, .point = con.point };
+	}
 	auto start_with = [&con](std::string keyword, std::string::const_iterator _itr) -> int {
 		int i = 0;
 		for (i; keyword[i]; ++i) {
@@ -86,7 +72,10 @@ std::optional<lexer::token> lexer::try_parse_keyword(lexer::context& con) noexce
 	con.itr += max_len;
 	code_point point = con.point;
 	con.point.col += max_len;
-	if (index == -1 || std::isalnum(*con.itr) || *con.itr == '_') {
+	if (index == -1) {
+		return std::nullopt;
+	}
+	if (keywords[index].type != lexer::token_type::sign && (std::isalnum(*con.itr)  || *con.itr == '_')) {
 		return std::nullopt;
 	}
 	return token { .raw = keywords[index].str, .type = keywords[index].type, .point = point };
@@ -121,11 +110,7 @@ std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 			toks.push_back(number.value());
 			continue;
 		}
-		if (std::optional<token> sign = try_parse_sign(con)) {
-			toks.push_back(sign.value());
-			continue;
-		}
-		if (std::optional<token> keyword = try_parse_keyword(con)) {
+		if (std::optional<token> keyword = try_parse_sign_and_keyword(con)) {
 			toks.push_back(keyword.value());
 			continue;
 		}
