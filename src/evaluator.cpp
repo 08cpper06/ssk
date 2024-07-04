@@ -37,10 +37,10 @@ int ast_node_value::evaluate(context& con) {
 			abort();
 		}
 		con.stack.push_back(itr->second.value);
-		if (itr->second.value.type() == typeid(float)) {
-			return static_cast<int>(std::any_cast<float>(itr->second.value));
+		if (itr->second.value.index() == float_index) {
+			return static_cast<int>(std::get<float>(itr->second.value));
 		}
-		return std::any_cast<int>(itr->second.value);
+		return std::get<int>(itr->second.value);
 	}
 	else {
 		con.return_code = std::atoi(value.raw.c_str());
@@ -57,8 +57,8 @@ int ast_node_value::evaluate(context& con) {
 int ast_node_bin::evaluate(context& con) {
 	con.return_code = lhs->evaluate(con);
 	con.return_code = rhs->evaluate(con);
-	std::any rhs_value = con.stack.back(); con.stack.pop_back();
-	std::any lhs_value = con.stack.back(); con.stack.pop_back();
+	OBJECT rhs_value = con.stack.back(); con.stack.pop_back();
+	OBJECT lhs_value = con.stack.back(); con.stack.pop_back();
 
 	if (op == "=") {
 		if (is_a<ast_node_value>(lhs.get())) {
@@ -76,8 +76,8 @@ int ast_node_bin::evaluate(context& con) {
 				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): not constant value(" << value->value.raw << ")" << std::endl;
 				abort();
 			}
-			if (itr->second.value.type() != rhs_value.type()) {
-				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): assign different type(`" << itr->second.value.type().name() << "` != `" << rhs_value.type().name() << "`)" << std::endl;
+			if (itr->second.value.index() != rhs_value.index()) {
+				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): assign different type(`" << std::visit(get_object_name {}, itr->second.value) << "` != `" << std::visit(get_object_name {}, rhs_value) << "`)" << std::endl;
 				abort();
 			}
 			itr->second.value = std::move(rhs_value);
@@ -85,30 +85,21 @@ int ast_node_bin::evaluate(context& con) {
 		return con.return_code;
 	}
 
-	if (lhs_value.type() != rhs_value.type()) {
-		std::cout << "runtime error (" << lhs->point.line << "," << lhs->point.col << "): assign different type(`" << lhs_value.type().name() << "` " << op << " `" << rhs_value.type().name() << "`)" << std::endl;
+	if (lhs_value.index() != rhs_value.index()) {
+		std::cout << "runtime error (" << lhs->point.line << "," << lhs->point.col << "): assign different type(`" << std::visit(get_object_name {}, lhs_value) << "` " << op << " `" << std::visit(get_object_name {}, rhs_value) << "`)" << std::endl;
 		abort();
 	} 
 
-	if (lhs_value.type() == typeid(float)) {
-		float result = 0.f;
-		switch (op[0]) {
-		case '+': result = std::any_cast<float>(lhs_value) + std::any_cast<float>(rhs_value); break;
-		case '-': result = std::any_cast<float>(lhs_value) - std::any_cast<float>(rhs_value); break;
-		case '*': result = std::any_cast<float>(lhs_value) * std::any_cast<float>(rhs_value); break;
-		case '/': result = std::any_cast<float>(lhs_value) / std::any_cast<float>(rhs_value); break;
-		}
-		con.return_code = static_cast<int>(result);
-		con.stack.push_back(result);
-	} else if (lhs_value.type() == typeid(int)) {
-		switch (op[0]) {
-		case '+': con.return_code = std::any_cast<int>(lhs_value) + std::any_cast<int>(rhs_value); break;
-		case '-': con.return_code = std::any_cast<int>(lhs_value) - std::any_cast<int>(rhs_value); break;
-		case '*': con.return_code = std::any_cast<int>(lhs_value) * std::any_cast<int>(rhs_value); break;
-		case '/': con.return_code = std::any_cast<int>(lhs_value) / std::any_cast<int>(rhs_value); break;
-		}
-		con.stack.push_back(con.return_code);
+	OBJECT result;
+	switch (op[0]) {
+		case '+': result = std::visit(operate_add_object {}, lhs_value, rhs_value); break;
+		case '-': result = std::visit(operate_sub_object {}, lhs_value, rhs_value); break;
+		case '*': result = std::visit(operate_mul_object {}, lhs_value, rhs_value); break;
+		case '/': result = std::visit(operate_div_object {}, lhs_value, rhs_value); break;
 	}
+
+	con.stack.push_back(result);
+	con.return_code = std::visit(get_object_return_code {}, result);
 
 	return con.return_code;
 }
@@ -137,13 +128,13 @@ int ast_node_var_definition::evaluate(context& con) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): variable double definition (" << name << ")" << std::endl;
 		abort();
 	}
-	std::any value = 0;
+	OBJECT value = 0;
 	if (init_value) {
 		con.return_code = init_value->evaluate(con);
-		if (con.stack.back().type() == typeid(int) && type != lexer::token_type::_int) {
+		if (con.stack.back().index() == int_index && type != lexer::token_type::_int) {
 			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
 			abort();
-		} else if (con.stack.back().type() == typeid(float) && type != lexer::token_type::_float) {
+		} else if (con.stack.back().index() == float_index && type != lexer::token_type::_float) {
 			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not int(" << name << ")" << std::endl;
 			abort();
 		}
