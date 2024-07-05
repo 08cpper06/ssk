@@ -16,6 +16,10 @@ public:
 		number,
 		semicolon,
 
+		comment_begin,
+		comment_end,
+		comment_line,
+
 		identifier,
 
 		underbar,

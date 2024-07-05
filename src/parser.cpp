@@ -275,10 +275,42 @@ std::unique_ptr<ast_node_base> parser::try_build_block(std::vector<lexer::token>
 	return std::make_unique<ast_node_block>(std::move(exprs), itr->point);
 }
 
+bool parser::try_skip_comment(std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type == lexer::token_type::comment_begin) {
+		int nest_count = 1;
+		++itr;
+		while (itr->type != lexer::token_type::eof) {
+			if (itr->type == lexer::token_type::comment_begin) {
+				++nest_count;
+			} else if (itr->type == lexer::token_type::comment_end) {
+				++itr;
+				--nest_count;
+				if (!nest_count) {
+					return true;
+				}
+				continue;
+			}
+			++itr;
+		}
+	} else if (itr->type == lexer::token_type::comment_line) {
+		while (itr->type != lexer::token_type::eof) {
+			if (itr->raw == "\n") {
+				++itr;
+				return true;
+			}
+			++itr;
+		}
+	}
+	return false;
+}
+
 std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::token>::const_iterator& itr) {
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
 	for (; itr->type != lexer::token_type::eof;) {
+		if (try_skip_comment(itr)) {
+			continue;
+		}
 		if (node = try_build_if(itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_expr(itr)) {

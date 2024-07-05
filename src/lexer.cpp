@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 #include <cassert>
+#include <iostream>
 
 
 std::optional<lexer::token> lexer::try_parse_number(lexer::context& con) noexcept {
@@ -41,6 +42,9 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = ">=", .type = lexer::token_type::sign },
 		{ .str = "!=", .type = lexer::token_type::sign },
 		{ .str = "==", .type = lexer::token_type::sign },
+		{ .str = "/*", .type = lexer::token_type::comment_begin },
+		{ .str = "*/", .type = lexer::token_type::comment_end },
+		{ .str = "//", .type = lexer::token_type::comment_line },
 		{ .str = "return", .type = lexer::token_type::_return },
 		{ .str = "int", .type = lexer::token_type::_int },
 		{ .str = "float", .type = lexer::token_type::_float },
@@ -138,7 +142,9 @@ std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 			} while (std::isspace(*con.itr));
 			continue;
 		}
-		assert(!*con.itr);
+
+		std::cout << "tokenize error (" << con.point.line << ", " << con.point.col << "):" << std::endl;
+		abort();
 	}
 
 	toks.push_back(token{ .raw = '\0', .type = token_type::eof, .point = con.point });
