@@ -35,7 +35,12 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = "}", .type = lexer::token_type::sign },
 		{ .str = "(", .type = lexer::token_type::sign },
 		{ .str = ")", .type = lexer::token_type::sign },
-
+		{ .str = "<", .type = lexer::token_type::sign },
+		{ .str = ">", .type = lexer::token_type::sign },
+		{ .str = "<=", .type = lexer::token_type::sign },
+		{ .str = ">=", .type = lexer::token_type::sign },
+		{ .str = "!=", .type = lexer::token_type::sign },
+		{ .str = "==", .type = lexer::token_type::sign },
 		{ .str = "return", .type = lexer::token_type::_return },
 		{ .str = "int", .type = lexer::token_type::_int },
 		{ .str = "float", .type = lexer::token_type::_float },

@@ -1,6 +1,6 @@
-mut fugo : int = 10;
+mut fugo : int = 5;
 const hoge: int = 10;
-if (fugo = 0) {
+if (fugo >= 5) {
 	fugo = 100;
 } else {
 	fugo = 200;

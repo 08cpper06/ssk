@@ -99,6 +99,18 @@ int ast_node_bin::evaluate(context& con) {
 		result = std::visit(operate_mul_object {}, lhs_value, rhs_value);
 	} else if (op == "/") {
 		result = std::visit(operate_div_object {}, lhs_value, rhs_value);
+	} else if (op == "==") {
+		result = std::visit(operate_equal_object {}, lhs_value, rhs_value);
+	} else if (op == "!=") {
+		result = std::visit(operate_not_object {}, lhs_value, rhs_value);
+	} else if (op == "<") {
+		result = std::visit(operate_less_than_object {}, lhs_value, rhs_value);
+	} else if (op == ">") {
+		result = std::visit(operate_greater_than_object {}, lhs_value, rhs_value);
+	} else if (op == "<=") {
+		result = std::visit(operate_less_than_or_equal_object {}, lhs_value, rhs_value);
+	} else if (op == ">=") {
+		result = std::visit(operate_greater_than_or_equal_object {}, lhs_value, rhs_value);
 	}
 
 	con.stack.push_back(result);
@@ -155,7 +167,12 @@ int ast_node_var_definition::evaluate(context& con) {
 
 int ast_node_if::evaluate(context& con) {
 	con.return_code = condition_block->evaluate(con);
-	if (con.return_code) {
+	OBJECT cond = std::visit(cast_bool_object {}, con.stack.back());
+	con.stack.pop_back();
+	if (cond.index() != bool_index) {
+		return con.return_code;
+	}
+	if (std::get<bool>(cond)) {
 		con.return_code = true_block->evaluate(con);
 	} else if (false_block) {
 		con.return_code = false_block->evaluate(con);

@@ -60,8 +60,52 @@ std::unique_ptr<ast_node_base> parser::try_build_plusminus_node(std::vector<lexe
 	return nullptr;
 }
 
-std::unique_ptr<ast_node_base> parser::try_build_assign(std::vector<lexer::token>::const_iterator& itr) {
+std::unique_ptr<ast_node_base> parser::try_build_equality(std::vector<lexer::token>::const_iterator& itr) {
+	std::unique_ptr<ast_node_base> lhs = try_build_relational(itr);
+	if (!lhs) {
+		return nullptr;
+	}
+	if (itr->raw != "==" &&
+		itr->raw != "!=") {
+		return std::move(lhs);
+	}
+	std::unique_ptr<ast_node_bin> node = std::make_unique<ast_node_bin>();
+	node->lhs = std::move(lhs);
+	node->point = itr->point;
+	node->op = itr->raw;
+	++itr;
+	node->rhs = try_build_relational(itr);
+	if (!(node->rhs)) {
+		return std::make_unique<ast_node_error>("not found right hand of `"+ node->op + "`", node->point);
+	}
+	return std::move(node);
+}
+
+std::unique_ptr<ast_node_base> parser::try_build_relational(std::vector<lexer::token>::const_iterator& itr) {
 	std::unique_ptr<ast_node_base> lhs = try_build_plusminus_node(itr);
+	if (!lhs) {
+		return nullptr;
+	}
+	if (itr->raw != "<" &&
+		itr->raw != ">" &&
+		itr->raw != "<=" &&
+		itr->raw != ">=") {
+		return lhs;
+	}
+	std::unique_ptr<ast_node_bin> node = std::make_unique<ast_node_bin>();
+	node->lhs = std::move(lhs);
+	node->point = itr->point;
+	node->op = itr->raw;
+	++itr;
+	node->rhs = try_build_plusminus_node(itr);
+	if (!(node->rhs)) {
+		return std::make_unique<ast_node_error>("not found right hand of `" + node->op + "`", node->point);
+	}
+	return std::move(node);
+}
+
+std::unique_ptr<ast_node_base> parser::try_build_assign(std::vector<lexer::token>::const_iterator& itr) {
+	std::unique_ptr<ast_node_base> lhs = try_build_equality(itr);
 	if (!lhs) {
 		return nullptr;
 	}
@@ -73,7 +117,7 @@ std::unique_ptr<ast_node_base> parser::try_build_assign(std::vector<lexer::token
 			node->lhs = std::move(lhs);
 			node->point = itr->point;
 			++itr;
-			node->rhs = try_build_plusminus_node(itr);
+			node->rhs = try_build_assign(itr);
 			lhs = std::move(node);
 		} else {
 			return lhs;
