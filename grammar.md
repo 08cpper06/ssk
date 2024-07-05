@@ -40,6 +40,11 @@
 &emsp;return<br>
 &emsp;mut<br>
 &emsp;const<br>
+&emsp;true<br>
+&emsp;false<br>
+&emsp;bool<br>
+&emsp;if<br>
+&emsp;else<br>
 
 ## Operators
 <b>*operator*</b>: one of<br>
@@ -72,6 +77,7 @@
 <b>*variable-type*</b>:<br>
 &emsp;int<br>
 &emsp;float<br>
+&emsp;bool<br>
 
 ## Expression
 <b>*expression*</b>:<br>
@@ -83,11 +89,15 @@
 
 <b>*relational-expression*</b>:<br>
 &emsp;<b>*equality-expression*</b><br>
-&emsp;<b>*equality-expression*</b> = <b>*equality-expression*</b><br>
+&emsp;<b>*equality-expression*</b> < <b>*equality-expression*</b><br>
+&emsp;<b>*equality-expression*</b> > <b>*equality-expression*</b><br>
+&emsp;<b>*equality-expression*</b> <= <b>*equality-expression*</b><br>
+&emsp;<b>*equality-expression*</b> >= <b>*equality-expression*</b><br>
 
 <b>*equality-expression*</b>:<br>
 &emsp;<b>*additive-expression*</b><br>
-&emsp;<b>*additive-expression*</b> = <b>*additive-expression*</b><br>
+&emsp;<b>*additive-expression*</b> == <b>*additive-expression*</b><br>
+&emsp;<b>*additive-expression*</b> != <b>*additive-expression*</b><br>
 
 <b>*additive-expression*</b>:<br>
 &emsp;<b>*multiplicative-expression*</b><br>
@@ -104,3 +114,5 @@
 &emsp;<b>*number*</b> . <b>*number*</b><br>
 &emsp;. <b>*number*</b><br>
 &emsp;<b>*number*</b> .<br>
+&emsp;true<br>
+&emsp;false<br>
