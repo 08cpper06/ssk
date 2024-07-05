@@ -78,6 +78,14 @@
 &emsp;<b>*expression*</b> <b>*assignment-expression*</b> <b>*expression*</b><br>
 
 <b>*assignment-expression*</b>:<br>
+&emsp;<b>*equality-expression*</b><br>
+&emsp;<b>*equality-expression*</b> = <b>*equality-expression*</b><br>
+
+<b>*relational-expression*</b>:<br>
+&emsp;<b>*equality-expression*</b><br>
+&emsp;<b>*equality-expression*</b> = <b>*equality-expression*</b><br>
+
+<b>*equality-expression*</b>:<br>
 &emsp;<b>*additive-expression*</b><br>
 &emsp;<b>*additive-expression*</b> = <b>*additive-expression*</b><br>
 
