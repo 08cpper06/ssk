@@ -1,6 +1,7 @@
 mut fugo : int = 5;
 const hoge: int = 10;
-if (fugo >= 5) {
+const test: bool = false;
+if (test) {
 	fugo = 100;
 } else {
 	fugo = 200;

@@ -4,6 +4,8 @@
 
 std::unique_ptr<ast_node_base> parser::try_build_value(std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->type != lexer::token_type::number &&
+		itr->type != lexer::token_type::_true &&
+		itr->type != lexer::token_type::_false &&
 		itr->type != lexer::token_type::identifier) {
 		return nullptr;
 	}
@@ -176,6 +178,7 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(std::vector<lexe
 	switch (tmp->type) {
 	case lexer::token_type::_int: break;
 	case lexer::token_type::_float: break;
+	case lexer::token_type::_bool: break;
 	default:
 		itr = tmp;
 		std::cout << "invalid type (" << tmp->raw << ")" << std::endl;

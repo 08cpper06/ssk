@@ -29,6 +29,10 @@ public:
 
 		_int,
 		_float,
+		_bool,
+
+		_true,
+		_false,
 
 		eof,
 	};
