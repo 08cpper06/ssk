@@ -12,7 +12,7 @@ inline static constexpr size_t bool_index = OBJECT(true).index();
 inline static constexpr size_t int_index = OBJECT(int(0)).index();
 inline static constexpr size_t float_index = OBJECT(float(0.f)).index();
 
-struct get_object_name {
+struct get_object_type_name {
 	std::string operator()(const auto& value) noexcept {
 		return typeid(decltype(value)).name();
 	}

@@ -77,7 +77,7 @@ int ast_node_bin::evaluate(context& con) {
 				abort();
 			}
 			if (itr->second.value.index() != rhs_value.index()) {
-				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): assign different type(`" << std::visit(get_object_name {}, itr->second.value) << "` != `" << std::visit(get_object_name {}, rhs_value) << "`)" << std::endl;
+				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): assign different type(`" << std::visit(get_object_type_name {}, itr->second.value) << "` != `" << std::visit(get_object_type_name {}, rhs_value) << "`)" << std::endl;
 				abort();
 			}
 			itr->second.value = std::move(rhs_value);
@@ -86,7 +86,7 @@ int ast_node_bin::evaluate(context& con) {
 	}
 
 	if (lhs_value.index() != rhs_value.index()) {
-		std::cout << "runtime error (" << lhs->point.line << "," << lhs->point.col << "): assign different type(`" << std::visit(get_object_name {}, lhs_value) << "` " << op << " `" << std::visit(get_object_name {}, rhs_value) << "`)" << std::endl;
+		std::cout << "runtime error (" << lhs->point.line << "," << lhs->point.col << "): assign different type(`" << std::visit(get_object_type_name {}, lhs_value) << "` " << op << " `" << std::visit(get_object_type_name {}, rhs_value) << "`)" << std::endl;
 		abort();
 	} 
 
