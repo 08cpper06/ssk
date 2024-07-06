@@ -4,13 +4,17 @@
 
 mut fugo : int = 0;
 const hoge : int = 1000;
-const test: bool = false;
+const test: int = 0;
 if (test) {
 	fugo = 100;
 } else {
 	fugo = 200;
 }
 return max(100, 200);
+
+fn main() -> int {
+	return max(100, 200);
+}
 
 fn max(const lhs: int, const rhs: int) -> int {
 	if (lhs > rhs) {
