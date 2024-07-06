@@ -348,6 +348,9 @@ std::unique_ptr<ast_node_base> parser::try_build_block(context& con, std::vector
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
 	for (; itr->type != lexer::token_type::eof;) {
+		if (try_skip_comment(itr)) {
+			continue;
+		}
 		if (node = try_build_do_while(con, itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_while(con, itr)) {

@@ -163,7 +163,7 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 	} else if (op == "/") {
 		result = std::visit(operate_div_object {}, lhs_value, rhs_value);
 		if (result.index() == state_index) {
-			std::cout << "divide by zero" << std::endl;
+			std::cout << "runtime error (" << point.line << ", " << point.col << "): divide by zero" << std::endl;
 			abort();
 		}
 	} else if (op == "==") {
