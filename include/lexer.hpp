@@ -32,6 +32,7 @@ public:
 		_return,
 		_if,
 		_else,
+		_while,
 
 		_int,
 		_float,

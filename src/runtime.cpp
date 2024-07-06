@@ -4,7 +4,7 @@
 
 
 OBJECT runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) {
-	for (std::unique_ptr<ast_node_base>& node : con.pre_evaluate) {
+	for (ast_node_base* node : con.pre_evaluate) {
 		con.return_code = node->evaluate(con);
 	}
 	if (node) {
@@ -31,7 +31,7 @@ OBJECT runtime::evaluate(const std::unique_ptr<ast_node_base>& node) {
 }
 
 void runtime::evaluate_pre_process(context& con) {
-	for (std::unique_ptr<ast_node_base>& node : con.pre_evaluate) {
+	for (ast_node_base* node : con.pre_evaluate) {
 		con.return_code = node->evaluate(con);
 	}
 }

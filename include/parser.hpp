@@ -375,6 +375,33 @@ public:
 	std::unique_ptr<ast_node_base> false_block;
 };
 
+class ast_node_while : public ast_node_base {
+public:
+	struct ast_while_tag : public ast_base_tag {};
+	inline static constexpr ast_while_tag tag;
+public:
+	ast_node_while(std::unique_ptr<ast_node_base>&& condition, std::unique_ptr<ast_node_base>&& block) :
+		condition(std::move(condition)),
+		block(std::move(block))
+	{}
+	~ast_node_while() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_while::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = indent + "<while>\n";
+		ret += indent + "\t<condition>\n";
+		ret += condition->log(indent + "\t");
+		ret += indent + "\t</condition>\n";
+		ret += block->log(indent + "\t");
+		ret += indent + "</while>\n";
+		return ret;
+	}
+	virtual std::optional<invalid_state> evaluate(context& con);
+
+	std::unique_ptr<ast_node_base> condition;
+	std::unique_ptr<ast_node_base> block;
+};
+
 class ast_node_program : public ast_node_base {
 public:
 	struct ast_expr_tag : public ast_base_tag {};
@@ -418,6 +445,7 @@ public:
 	static std::unique_ptr<ast_node_base> try_build_var_definition(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_assign(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_if(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_while(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_block(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_function(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static bool try_skip_comment(std::vector<lexer::token>::const_iterator& itr);

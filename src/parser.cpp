@@ -285,6 +285,24 @@ std::unique_ptr<ast_node_base> parser::try_build_if(context& con, std::vector<le
 	return std::make_unique<ast_node_if>(std::move(cond), std::move(true_block), std::move(false_block));
 }
 
+std::unique_ptr<ast_node_base> parser::try_build_while(context& con, std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::_while) {
+		return nullptr;
+	}
+	++itr;
+	if (itr->raw != "(") {
+		return nullptr;
+	}
+	++itr;
+	std::unique_ptr<ast_node_base> condition = try_build_assign(con, itr);
+	if (!condition || itr->raw != ")") {
+		return nullptr;
+	}
+	++itr;
+	std::unique_ptr<ast_node_base> block = try_build_block(con, itr);
+	return std::make_unique<ast_node_while>(std::move(condition), std::move(block));
+}
+
 std::unique_ptr<ast_node_base> parser::try_build_block(context& con, std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->raw != "{") {
 		return nullptr;
@@ -293,7 +311,9 @@ std::unique_ptr<ast_node_base> parser::try_build_block(context& con, std::vector
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
 	for (; itr->type != lexer::token_type::eof;) {
-		if (node = try_build_if(con, itr)) {
+		if (node = try_build_while(con, itr)) {
+			exprs.push_back(std::move(node));
+		} else if (node = try_build_if(con, itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_expr(con, itr)) {
 			exprs.push_back(std::move(node));
@@ -404,8 +424,8 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 	func->function_name = func_name;
 	func->point = point;
 	func->arguments = std::move(args);
-	con.pre_evaluate.push_back(std::move(func));
-	return nullptr;
+	con.pre_evaluate.push_back(func.get());
+	return std::move(func);
 }
 
 bool parser::try_skip_comment(std::vector<lexer::token>::const_iterator& itr) {
@@ -445,6 +465,8 @@ std::unique_ptr<ast_node_base> parser::try_build_program(context& con, std::vect
 			continue;
 		}
 		if (node = try_build_function(con, itr)) {
+			exprs.push_back(std::move(node));
+		} else if (node = try_build_while(con, itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_if(con, itr)) {
 			exprs.push_back(std::move(node));

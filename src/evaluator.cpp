@@ -271,6 +271,23 @@ std::optional<invalid_state> ast_node_if::evaluate(context& con) {
 	return con.return_code;
 }
 
+std::optional<invalid_state> ast_node_while::evaluate(context& con) {
+	do {
+		con.return_code = condition->evaluate(con);
+		OBJECT cond = std::visit(cast_bool_object {}, con.stack.back());
+		con.stack.pop_back();
+		if (cond.index() != bool_index) {
+			return con.return_code;
+		}
+		if (std::get<bool>(cond)) {
+			con.return_code = block->evaluate(con);
+		} else {
+			break;
+		}
+	} while (true);
+	return con.return_code;
+}
+
 std::optional<invalid_state> ast_node_program::evaluate(context& con) {
 	for (const std::unique_ptr<ast_node_base>& item : exprs) {
 		con.return_code = item->evaluate(con);

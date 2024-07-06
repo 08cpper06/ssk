@@ -34,5 +34,5 @@ struct context {
 	std::list<std::string> name_space;
 	std::list<OBJECT> stack;
 
-	std::vector<std::unique_ptr<ast_node_base>> pre_evaluate;
+	std::vector<ast_node_base*> pre_evaluate;
 };
