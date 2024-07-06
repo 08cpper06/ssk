@@ -1,6 +1,6 @@
 # Lexical conventions
 ## Token
-<b>*token*</b>:
+<b>*token*</b>:<br>
 &emsp;<b>*identifier*</b><br>
 &emsp;<b>*keyword*</b><br>
 &emsp;<b>*operator*</b><br>
