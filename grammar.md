@@ -66,6 +66,15 @@
 <b>*new-line*</b>:<br>
 &emsp;\n<br>
 
+## Function
+<b>*function-definition*</b>:<br>
+&emsp;fn <b>*identifier*</b> () -> <b>*variable-type*</b> <b>*block*</b><br>
+&emsp;fn <b>*identifier*</b> (<b>*arguments*</b>) -> <b>*variable-type*</b> <b>*block*</b><br>
+
+<b>*arguments*</b>:<br>
+&emsp;<b>*modifier*</b> <b>*identifier*</b> : <b>*variable-type*</b><br>
+&emsp;<b>*arguments*</b>, <b>*arguments*</b>
+
 ## If / Else
 <b>*if-expression*</b>:<br>
 &emsp;if ( <b>*expression*</b> ) <b>*block*</b><br>
