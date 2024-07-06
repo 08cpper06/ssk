@@ -4,6 +4,9 @@
 
 
 OBJECT runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) {
+	for (std::unique_ptr<ast_node_base>& node : con.pre_evaluate) {
+		con.return_code = node->evaluate(con);
+	}
 	if (node) {
 		if (std::optional<invalid_state> state = node->evaluate(con)) {
 			return state.value();

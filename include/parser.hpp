@@ -407,21 +407,21 @@ public:
 
 class parser {
 public:
-	static std::unique_ptr<ast_node_base> try_build_value(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_call_function(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_timedivide_node(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_plusminus_node(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_equality(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_relational(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_expr(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_return(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_var_definition(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_assign(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_if(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_block(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_function(std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_value(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_call_function(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_timedivide_node(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_plusminus_node(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_equality(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_relational(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_expr(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_return(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_var_definition(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_assign(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_if(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_block(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_function(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static bool try_skip_comment(std::vector<lexer::token>::const_iterator& itr);
-	static std::unique_ptr<ast_node_base> try_build_program(std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_program(context& con, std::vector<lexer::token>::const_iterator& itr);
 public:
-	static std::unique_ptr<ast_node_base> parse(const std::vector<lexer::token>& toks) noexcept;
+	static std::unique_ptr<ast_node_base> parse(context& con, const std::vector<lexer::token>& toks) noexcept;
 };

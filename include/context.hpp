@@ -33,4 +33,6 @@ struct context {
 	std::map<std::string, func_info> func_table;
 	std::list<std::string> name_space;
 	std::list<OBJECT> stack;
+
+	std::vector<std::unique_ptr<ast_node_base>> pre_evaluate;
 };

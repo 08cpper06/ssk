@@ -26,7 +26,8 @@ int main(int argc, const char* argv[]) {
 
 	std::cout << "===   AST  ===" << std::endl;
 
-	std::unique_ptr<ast_node_base> root = parser::parse(toks);
+	context con;
+	std::unique_ptr<ast_node_base> root = parser::parse(con, toks);
 	if (root) {
 		std::cout << root->log("") << std::endl;
 	} else {
@@ -34,7 +35,6 @@ int main(int argc, const char* argv[]) {
 	}
 
 	std::cout << "==============" << std::endl;
-	context con;
 	OBJECT return_code = runtime::evaluate(root, con);
 	std::cout << "return code: " << std::visit(get_object_as_string {}, return_code) << std::endl;
 
