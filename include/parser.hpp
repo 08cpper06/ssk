@@ -73,10 +73,12 @@ public:
 	struct ast_call_function_tag : public ast_base_tag {};
 	inline static constexpr ast_call_function_tag tag;
 public:
-	ast_node_call_function(const std::string& function_name, std::vector<std::unique_ptr<ast_node_base>>&& arguments) :
+	ast_node_call_function(const std::string& function_name, std::vector<std::unique_ptr<ast_node_base>>&& arguments, code_point point) :
 		function_name(function_name),
 		arguments(std::move(arguments))
-	{}
+	{
+		this->point = point;
+	}
 	virtual ~ast_node_call_function() = default;
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_call_function::tag; }

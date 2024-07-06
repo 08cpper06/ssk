@@ -179,7 +179,7 @@ std::unique_ptr<ast_node_base> parser::try_build_call_function(std::vector<lexer
 		return std::make_unique<ast_node_error>("expected `)`", point);
 	}
 	++itr;
-	return std::make_unique<ast_node_call_function>(name, std::move(arguments));
+	return std::make_unique<ast_node_call_function>(name, std::move(arguments), point);
 }
 
 std::unique_ptr<ast_node_base> parser::try_build_return(std::vector<lexer::token>::const_iterator& itr) {

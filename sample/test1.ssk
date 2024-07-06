@@ -1,7 +1,7 @@
 // line comment
 /* block comment */
 /* /* nested block comment */ */
-fn max(const lhs: int, const rhs: int) -> bool {
+fn max(const lhs: int, const rhs: int) -> int {
 	if (lhs > rhs) {
 		return lhs;
 	}

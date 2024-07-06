@@ -100,6 +100,17 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 	}
 	con.return_code = itr->second.block->evaluate(con);
 
+	if (con.stack.back().index() == bool_index && itr->second.type != lexer::token_type::_bool) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected bool value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
+		abort();
+	} else if (con.stack.back().index() == int_index && itr->second.type != lexer::token_type::_int) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected int value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
+		abort();
+	} else if (con.stack.back().index() == float_index && itr->second.type != lexer::token_type::_float) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected float value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
+		abort();
+	}
+
 	for (const context::func_info::arg_info& info : itr->second.arguments) {
 		con.var_table.erase(encode(con, function_name) + "." + info.name);
 	}
