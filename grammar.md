@@ -56,6 +56,7 @@
 &emsp;<b>*comment*</b><br>
 &emsp;<b>*if-expression*</b><br>
 &emsp;<b>*while-expression*</b><br>
+&emsp;<b>*do-while-expression*</b><br>
 &emsp;<b>*block*</b><br>
 &emsp;<b>*stmt*</b><br>
 
@@ -84,6 +85,9 @@
 ## While
 <b>*while-expression*</b>:<br>
 &emsp;while ( <b>*expression*</b> ) <b>*block*</b><br>
+
+<b>*do-while-expression*</b>:<br>
+&emsp;do <b>*block*</b> while ( <b>*expression*</b> ) ;<br>
 
 ## Block
 <b>*block*</b>:<br>
