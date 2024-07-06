@@ -51,6 +51,21 @@
 &emsp;+ - * / = : ;<br>
 
 # Expression
+## Start
+<b>*program*</b>:<br>
+&emsp;<b>*comment*</b><br>
+&emsp;<b>*if-expression*</b><br>
+&emsp;<b>*block*</b><br>
+&emsp;<b>*stmt*</b><br>
+
+## Comment
+<b>*comment*</b>:<br>
+&emsp;/* <b>*something*</b> */<br>
+&emsp;// <b>*something*</b> <b>*new-line*</b><br>
+
+<b>*new-line*</b>:<br>
+&emsp;\n<br>
+
 ## If / Else
 <b>*if-expression*</b>:<br>
 &emsp;if ( <b>*expression*</b> ) <b>*block*</b><br>
