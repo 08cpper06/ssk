@@ -74,6 +74,38 @@ std::optional<invalid_state> ast_node_value::evaluate(context& con) {
 	return con.return_code;
 }
 
+std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
+	std::map<std::string, context::func_info>::iterator itr = con.func_table.find(function_name);
+	if (itr == con.func_table.end()) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): not found method(" << function_name << ")" << std::endl;
+		abort();
+	}
+	if (!(itr->second.block)) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): not found implement (" << function_name << ")" << std::endl;
+		abort();
+	}
+
+	if (itr->second.arguments.size() != arguments.size()) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): the count of arguments is mismatch (" << function_name << ")" << std::endl;
+		abort();
+	}
+
+	int idx = 0;
+	for (const context::func_info::arg_info& info: itr->second.arguments) {
+		con.return_code = arguments[idx]->evaluate(con);
+		++idx;
+		OBJECT value = con.stack.back();
+		con.stack.pop_back();
+		con.var_table.insert({ encode(con, function_name) + "." + info.name, context::var_info {.modifier = info.modifier, .type = info.type, .value = value}});
+	}
+	con.return_code = itr->second.block->evaluate(con);
+
+	for (const context::func_info::arg_info& info : itr->second.arguments) {
+		con.var_table.erase(encode(con, function_name) + "." + info.name);
+	}
+	return con.return_code;
+}
+
 std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 	con.return_code = lhs->evaluate(con);
 	con.return_code = rhs->evaluate(con);
@@ -160,10 +192,11 @@ std::optional<invalid_state> ast_node_function::evaluate(context& con) {
 		abort();
 	}
 	context::func_info info;
-	for (const auto& arg : arguments) {
-		info.var_table.insert({ arg.name, context::var_info { .modifier = arg.modifier, .type = arg.type } });
+	for (const ast_node_function::var_type& arg : arguments) {
+		info.arguments.push_back(context::func_info::arg_info { .name = arg.name, .modifier = arg.modifier, .type = arg.type });
 	}
 	info.type = return_type;
+	info.block = block.get();
 	con.func_table.insert({ function_name, std::move(info) });
 	con.return_code = std::nullopt;
 	return con.return_code;
@@ -172,6 +205,9 @@ std::optional<invalid_state> ast_node_block::evaluate(context& con) {
 	con.name_space.push_back(block_name);
 	for (const std::unique_ptr<ast_node_base>& node : exprs) {
 		con.return_code = node->evaluate(con);
+		if (con.is_abort) {
+			break;
+		}
 	}
 	con.name_space.pop_back();
 	return con.return_code;

@@ -6,6 +6,8 @@
 #include <map>
 
 
+class ast_node_base;
+
 struct context {
 
 	struct var_info {
@@ -14,8 +16,15 @@ struct context {
 		OBJECT value;
 	};
 	struct func_info {
-		std::map<std::string, var_info> var_table;
+		struct arg_info {
+			std::string name;
+			lexer::token_type modifier;
+			lexer::token_type type;
+		};
+		std::vector<arg_info> arguments;
 		lexer::token_type type;
+
+		ast_node_base* block;
 	};
 
 	std::optional<invalid_state> return_code;

@@ -68,6 +68,33 @@ public:
 	lexer::token value;
 };
 
+class ast_node_call_function : public ast_node_base {
+public:
+	struct ast_call_function_tag : public ast_base_tag {};
+	inline static constexpr ast_call_function_tag tag;
+public:
+	ast_node_call_function(const std::string& function_name, std::vector<std::unique_ptr<ast_node_base>>&& arguments) :
+		function_name(function_name),
+		arguments(std::move(arguments))
+	{}
+	virtual ~ast_node_call_function() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_call_function::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = indent + "<call_function name=\"" + function_name + "\">\n";
+		ret += indent + "\t<arguments>\n";
+		for (const std::unique_ptr<ast_node_base>& arg : arguments) {
+			ret += arg->log(indent + "\t\t");
+		}
+		ret += indent + "\t</arguments>\n";
+		ret += indent + "</call_function>\n";
+		return ret;
+	}
+	virtual std::optional<invalid_state> evaluate(context& con);
+	std::string function_name;
+	std::vector<std::unique_ptr<ast_node_base>> arguments;
+};
+
 class ast_node_bin : public ast_node_base {
 public:
 	struct ast_bin_tag : public ast_base_tag {};
@@ -152,59 +179,6 @@ public:
 	std::unique_ptr<ast_node_base> value;
 };
 
-class ast_node_function : public ast_node_base {
-public:
-	struct var_type {
-		lexer::token_type modifier;
-		lexer::token_type type;
-		std::string name;
-	};
-public:
-	struct ast_function_tag : public ast_base_tag {};
-	inline static constexpr ast_function_tag tag;
-
-public:
-	ast_node_function() = default;
-	virtual ~ast_node_function() = default;
-
-	virtual const ast_base_tag* get_tag() const { return &ast_node_function::tag; }
-	virtual std::string log(std::string indent) {
-		std::string ret = indent + "<function name=" + function_name + ">\n";
-		ret += indent + "\t<return type=\"";
-		switch (return_type) {
-		case lexer::token_type::_int: ret += "int"; break;
-		case lexer::token_type::_float: ret += "float"; break;
-		case lexer::token_type::_bool: ret += "bool"; break;
-		}
-		ret += "\"></return>\n";
-		for (const var_type& arg : arguments) {
-			ret += indent + "\t<argument type=\"";
-			switch (arg.modifier) {
-			case lexer::token_type::_mut: ret += "mut"; break;
-			case lexer::token_type::_const: ret += "const"; break;
-			}
-			switch (arg.type) {
-			case lexer::token_type::_int: ret += " int"; break;
-			case lexer::token_type::_float: ret += " float"; break;
-			case lexer::token_type::_bool: ret += " bool"; break;
-			}
-			ret += "\">" + arg.name + "</argument>\n";
-		}
-		if (block) {
-			ret += block->log(indent + "\t");
-		}
-		ret += indent + "</function>\n";
-		return ret;
-	}
-	virtual std::optional<invalid_state> evaluate(context& con);
-	std::unique_ptr<ast_node_base> block;
-	std::string function_name;
-
-	std::vector<var_type> arguments;
-
-	lexer::token_type return_type;
-};
-
 class ast_node_block : public ast_node_base {
 public:
 	struct ast_return_tag : public ast_base_tag {};
@@ -241,6 +215,68 @@ public:
 	virtual std::optional<invalid_state> evaluate(context& con);
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::string block_name;
+};
+
+class ast_node_function : public ast_node_base {
+public:
+	struct var_type {
+		lexer::token_type modifier;
+		lexer::token_type type;
+		std::string name;
+	};
+public:
+	struct ast_function_tag : public ast_base_tag {};
+	inline static constexpr ast_function_tag tag;
+
+public:
+	ast_node_function() :
+		block(nullptr),
+		function_name(),
+		arguments({}),
+		return_type(lexer::token_type::eof)
+	{}
+	virtual ~ast_node_function() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_function::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = indent + "<function name=" + function_name + ">\n";
+		ret += indent + "\t<return type=\"";
+		switch (return_type) {
+		case lexer::token_type::_int: ret += "int"; break;
+		case lexer::token_type::_float: ret += "float"; break;
+		case lexer::token_type::_bool: ret += "bool"; break;
+		}
+		ret += "\"></return>\n";
+		for (const var_type& arg : arguments) {
+			ret += indent + "\t<argument type=\"";
+			switch (arg.modifier) {
+			case lexer::token_type::_mut: ret += "mut"; break;
+			case lexer::token_type::_const: ret += "const"; break;
+			}
+			switch (arg.type) {
+			case lexer::token_type::_int: ret += " int"; break;
+			case lexer::token_type::_float: ret += " float"; break;
+			case lexer::token_type::_bool: ret += " bool"; break;
+			}
+			ret += "\">" + arg.name + "</argument>\n";
+		}
+		if (block) {
+			if (ast_node_block* casted_block = dynamic_cast<ast_node_block*>(block.get())) {
+				casted_block->block_name = "implement";
+				ret += block->log(indent + "\t");
+				casted_block->block_name = function_name;
+			}
+		}
+		ret += indent + "</function>\n";
+		return ret;
+	}
+	virtual std::optional<invalid_state> evaluate(context& con);
+	std::unique_ptr<ast_node_base> block;
+	std::string function_name;
+
+	std::vector<var_type> arguments;
+
+	lexer::token_type return_type;
 };
 
 class ast_node_var_definition : public ast_node_base {
@@ -370,6 +406,7 @@ public:
 class parser {
 public:
 	static std::unique_ptr<ast_node_base> try_build_value(std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_call_function(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_timedivide_node(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_plusminus_node(std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_equality(std::vector<lexer::token>::const_iterator& itr);

@@ -2,15 +2,18 @@
 /* block comment */
 /* /* nested block comment */ */
 fn max(const lhs: int, const rhs: int) -> bool {
-	return lhs > rhs;
+	if (lhs > rhs) {
+		return lhs;
+	}
+	return rhs;
 }
 
 mut fugo : int = 0;
-const hoge : int = 10;
+const hoge : int = 1000;
 const test: bool = false;
 if (test) {
 	fugo = 100;
 } else {
 	fugo = 200;
 }
-return hoge+fugo;
+return max(100, 200);
