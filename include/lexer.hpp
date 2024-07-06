@@ -33,6 +33,7 @@ public:
 		_if,
 		_else,
 		_while,
+		_do,
 
 		_int,
 		_float,

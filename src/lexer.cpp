@@ -59,6 +59,7 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = "else", .type = lexer::token_type::_else },
 		{ .str = "fn", .type = lexer::token_type::func },
 		{ .str = "while", .type = lexer::token_type::_while },
+		{ .str = "do", .type = lexer::token_type::_do },
 	};
 	if (*con.itr == '\n') {
 		++con.itr;

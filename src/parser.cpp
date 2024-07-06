@@ -289,18 +289,55 @@ std::unique_ptr<ast_node_base> parser::try_build_while(context& con, std::vector
 	if (itr->type != lexer::token_type::_while) {
 		return nullptr;
 	}
+	code_point point = itr->point;
 	++itr;
 	if (itr->raw != "(") {
-		return nullptr;
+		return std::make_unique<ast_node_error>("expected `(`", point);
 	}
 	++itr;
 	std::unique_ptr<ast_node_base> condition = try_build_assign(con, itr);
-	if (!condition || itr->raw != ")") {
-		return nullptr;
+	if (!condition) {
+		return std::make_unique<ast_node_error>("expected condition expression", point);
+	}
+	if (itr->raw != ")") {
+		return std::make_unique<ast_node_error>("expected `)`", point);
 	}
 	++itr;
 	std::unique_ptr<ast_node_base> block = try_build_block(con, itr);
-	return std::make_unique<ast_node_while>(std::move(condition), std::move(block));
+	return std::make_unique<ast_node_while>(std::move(condition), std::move(block), point);
+}
+
+std::unique_ptr<ast_node_base> parser::try_build_do_while(context& con, std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::_do) {
+		return nullptr;
+	}
+	code_point point = itr->point;
+	++itr;
+	std::unique_ptr<ast_node_base> block = try_build_block(con, itr);
+	if (!block) {
+		return std::make_unique<ast_node_error>("expected code block", point);
+	}
+	
+	if (itr->type != lexer::token_type::_while) {
+		return std::make_unique<ast_node_error>("expected `while`", point);
+	}
+	++itr;
+	if (itr->raw != "(") {
+		return std::make_unique<ast_node_error>("expected `(`", point);
+	}
+	++itr;
+	std::unique_ptr<ast_node_base> condition = try_build_assign(con, itr);
+	if (!condition) {
+		return std::make_unique<ast_node_error>("expected condition expression", point);
+	}
+	if (itr->raw != ")") {
+		return std::make_unique<ast_node_error>("expected `)`", point);
+	}
+	++itr;
+	if (itr->type != lexer::token_type::semicolon) {
+		return std::make_unique<ast_node_error>("expected `;`", point);
+	}
+	return std::make_unique<ast_node_do_while>(std::move(condition), std::move(block), point);
 }
 
 std::unique_ptr<ast_node_base> parser::try_build_block(context& con, std::vector<lexer::token>::const_iterator& itr) {
@@ -311,7 +348,9 @@ std::unique_ptr<ast_node_base> parser::try_build_block(context& con, std::vector
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::unique_ptr<ast_node_base> node;
 	for (; itr->type != lexer::token_type::eof;) {
-		if (node = try_build_while(con, itr)) {
+		if (node = try_build_do_while(con, itr)) {
+			exprs.push_back(std::move(node));
+		} else if (node = try_build_while(con, itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_if(con, itr)) {
 			exprs.push_back(std::move(node));
@@ -465,6 +504,8 @@ std::unique_ptr<ast_node_base> parser::try_build_program(context& con, std::vect
 			continue;
 		}
 		if (node = try_build_function(con, itr)) {
+			exprs.push_back(std::move(node));
+		} else if (node = try_build_do_while(con, itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_while(con, itr)) {
 			exprs.push_back(std::move(node));
