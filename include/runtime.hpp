@@ -5,6 +5,6 @@
 
 class runtime {
 public:
-	static int evaluate(const std::unique_ptr<ast_node_base>& node, context& con);
-	static int evaluate(const std::unique_ptr<ast_node_base>& node);
+	static OBJECT evaluate(const std::unique_ptr<ast_node_base>& node, context& con);
+	static OBJECT evaluate(const std::unique_ptr<ast_node_base>& node);
 };

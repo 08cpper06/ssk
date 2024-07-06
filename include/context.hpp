@@ -13,8 +13,8 @@ struct context {
 		lexer::token_type type;
 		OBJECT value;
 	};
-	int return_code;
-	int is_abort;
+	std::optional<invalid_state> return_code;
+	int is_abort { 0 };
 	std::map<std::string, info> var_table;
 	std::list<std::string> name_space;
 	std::list<OBJECT> stack;

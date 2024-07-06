@@ -34,8 +34,9 @@ int main(int argc, const char* argv[]) {
 	}
 
 	std::cout << "==============" << std::endl;
-	int return_code = runtime::evaluate(root);
-	std::cout << "return code: " << return_code << std::endl;
+	context con;
+	OBJECT return_code = runtime::evaluate(root, con);
+	std::cout << "return code: " << std::visit(get_object_as_string {}, return_code) << std::endl;
 
 	return 0;
 }

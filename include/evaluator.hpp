@@ -9,5 +9,5 @@ public:
 	static std::string encode(const context& con, const std::string& name);
 	static std::map<std::string, context::info>::iterator find_var(context& con, const std::string name);
 public:
-	virtual int evaluate(context& con) { return con.return_code; }
+	virtual std::optional<invalid_state> evaluate(context& con) { return con.return_code; }
 };

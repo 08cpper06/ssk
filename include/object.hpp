@@ -1,13 +1,11 @@
 #pragma once
 #include <variant>
 #include <string>
+#include "state.hpp"
 
-struct invalid_state {
-	;
-};
 
 #define OBJECT std::variant<invalid_state, bool, int, float>
-inline static constexpr size_t invalid_state_index = OBJECT(invalid_state()).index();
+inline static constexpr size_t state_index = OBJECT(invalid_state()).index();
 inline static constexpr size_t bool_index = OBJECT(true).index();
 inline static constexpr size_t int_index = OBJECT(int(0)).index();
 inline static constexpr size_t float_index = OBJECT(float(0.f)).index();
@@ -19,14 +17,29 @@ struct get_object_type_name {
 };
 
 struct get_object_return_code {
-	int operator()(int value) noexcept {
-		return value;
+	std::optional<invalid_state> operator()(int value) noexcept {
+		return std::nullopt;
 	}
-	int operator()(float value) noexcept {
-		return static_cast<int>(value);
+	std::optional<invalid_state> operator()(float value) noexcept {
+		return std::nullopt;
 	}
-	int operator()(const auto&) noexcept {
-		return 0;
+	std::optional<invalid_state> operator()(const auto&) noexcept {
+		return invalid_state();
+	}
+};
+
+struct get_object_as_string {
+	std::string operator()(const invalid_state& value) noexcept {
+		return "invalid state";
+	}
+	std::string operator()(const int& value) noexcept {
+		return std::to_string(value);
+	}
+	std::string operator()(const float& value) noexcept {
+		return std::to_string(value);
+	}
+	std::string operator()(const auto& value) noexcept {
+		return "invalid state";
 	}
 };
 
@@ -101,15 +114,27 @@ struct operate_mul_object {
 
 struct operate_div_object {
 	OBJECT operator()(int lhs, int rhs) noexcept {
+		if (!rhs) {
+			return invalid_state {};
+		}
 		return lhs / rhs;
 	}
 	OBJECT operator()(int lhs, float rhs) noexcept {
+		if (!rhs) {
+			return invalid_state {};
+		}
 		return lhs / static_cast<int>(rhs);
 	}
 	OBJECT operator()(float lhs, int rhs) noexcept {
+		if (!rhs) {
+			return invalid_state {};
+		}
 		return static_cast<int>(lhs) / rhs;
 	}
 	OBJECT operator()(float lhs, float rhs) noexcept {
+		if (!rhs) {
+			return invalid_state {};
+		}
 		return lhs / rhs;
 	}
 	OBJECT operator()(auto&, auto&) noexcept {

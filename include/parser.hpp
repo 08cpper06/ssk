@@ -23,7 +23,7 @@ public:
 	virtual std::string log(std::string indent) {
 		return "";
 	}
-	virtual int evaluate(context& con) { return con.return_code; }
+	virtual std::optional<invalid_state> evaluate(context& con) { return con.return_code; }
 
 	code_point point { 0, 0 };
 };
@@ -44,7 +44,7 @@ public:
 	virtual std::string log(std::string indent) {
 		return indent + "<error>" + text + "</error>\n";
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 	std::string text;
 };
 
@@ -64,7 +64,7 @@ public:
 	virtual std::string log(std::string indent) {
 		return indent + "<value>" + value.raw + "</value>\n";
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 	lexer::token value;
 };
 
@@ -98,7 +98,7 @@ public:
 		}
 		return ret + indent + "</bin>\n";
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 	std::string op;
 	std::unique_ptr<ast_node_base> lhs;
 	std::unique_ptr<ast_node_base> rhs;
@@ -123,7 +123,7 @@ public:
 		}
 		return indent + "<expr>error</expr>\n";
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 	std::unique_ptr<ast_node_base> expr;
 };
 
@@ -148,7 +148,7 @@ public:
 		}
 		return indent + "<expr>error</expr>\n";
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 	std::unique_ptr<ast_node_base> value;
 };
 
@@ -185,7 +185,7 @@ public:
 		}
 		return ret + indent + "</" + block_name + ">\n";
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 	std::string block_name;
 };
@@ -234,7 +234,7 @@ public:
 		ret += indent + "</define>\n";
 		return ret;
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 	lexer::token_type modifier;
 	std::string name;
 	lexer::token_type type;
@@ -277,7 +277,7 @@ public:
 		ret += indent + "</if>\n";
 		return ret;
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 
 	std::unique_ptr<ast_node_base> condition_block;
 	std::unique_ptr<ast_node_base> true_block;
@@ -310,7 +310,7 @@ public:
 		ret += indent + "</program>\n";
 		return ret;
 	}
-	virtual int evaluate(context& con);
+	virtual std::optional<invalid_state> evaluate(context& con);
 	std::vector<std::unique_ptr<ast_node_base>> exprs;
 };
 

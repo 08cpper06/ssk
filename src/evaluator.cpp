@@ -24,12 +24,12 @@ std::map<std::string, context::info>::iterator ast_evaluator::find_var(context& 
 	return itr;
 }
 
-int ast_node_error::evaluate(context& con) {
+std::optional<invalid_state> ast_node_error::evaluate(context& con) {
 	std::cout << "runtime error (" << point.line << ", " << point.col << "): syntax error(" << text << ")" << std::endl;
 	abort();
 }
 
-int ast_node_value::evaluate(context& con) {
+std::optional<invalid_state> ast_node_value::evaluate(context& con) {
 	if (value.type == lexer::token_type::identifier) {
 		std::map<std::string, context::info>::const_iterator itr = find_var(con, value.raw);
 		if (itr == con.var_table.end()) {
@@ -37,30 +37,30 @@ int ast_node_value::evaluate(context& con) {
 			abort();
 		}
 		con.stack.push_back(itr->second.value);
-		return std::visit(get_object_return_code {}, itr->second.value);
+		return std::visit(get_object_return_code{}, itr->second.value);
 	}
 	else {
 		if (value.type == lexer::token_type::_true) {
 			con.stack.push_back(true);
-			con.return_code = 1;
+			con.return_code = std::nullopt;
 			return con.return_code;
 		} else if (value.type == lexer::token_type::_false) {
 			con.stack.push_back(false);
-			con.return_code = 0;
+			con.return_code = std::nullopt;
 			return con.return_code;
 		}
-		con.return_code = std::atoi(value.raw.c_str());
 		if (value.raw.find('.') != std::string::npos) {
 			con.stack.push_back(static_cast<float>(std::stod(value.raw.c_str())));
 		} else {
-			con.stack.push_back(con.return_code);
+			con.stack.push_back(std::atoi(value.raw.c_str()));
 		}
+		con.return_code = std::nullopt;
 		return con.return_code;
 	}
 	return con.return_code;
 }
 
-int ast_node_bin::evaluate(context& con) {
+std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 	con.return_code = lhs->evaluate(con);
 	con.return_code = rhs->evaluate(con);
 	OBJECT rhs_value = con.stack.back(); con.stack.pop_back();
@@ -105,6 +105,10 @@ int ast_node_bin::evaluate(context& con) {
 		result = std::visit(operate_mul_object {}, lhs_value, rhs_value);
 	} else if (op == "/") {
 		result = std::visit(operate_div_object {}, lhs_value, rhs_value);
+		if (result.index() == state_index) {
+			std::cout << "divide by zero" << std::endl;
+			abort();
+		}
 	} else if (op == "==") {
 		result = std::visit(operate_equal_object {}, lhs_value, rhs_value);
 	} else if (op == "!=") {
@@ -124,18 +128,18 @@ int ast_node_bin::evaluate(context& con) {
 
 	return con.return_code;
 }
-int ast_node_expr::evaluate(context& con) {
+std::optional<invalid_state> ast_node_expr::evaluate(context& con) {
 	con.return_code = expr->evaluate(con);
 	return con.return_code;
 }
-int ast_node_return::evaluate(context& con) {
+std::optional<invalid_state> ast_node_return::evaluate(context& con) {
 	if (value) {
 		con.return_code = value->evaluate(con);
 	}
 	con.is_abort = true;
 	return con.return_code;
 }
-int ast_node_block::evaluate(context& con) {
+std::optional<invalid_state> ast_node_block::evaluate(context& con) {
 	con.name_space.push_back(block_name);
 	for (const std::unique_ptr<ast_node_base>& node : exprs) {
 		con.return_code = node->evaluate(con);
@@ -143,7 +147,7 @@ int ast_node_block::evaluate(context& con) {
 	con.name_space.pop_back();
 	return con.return_code;
 }
-int ast_node_var_definition::evaluate(context& con) {
+std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 	std::string encoded_name = encode(con, name);
 	if (con.var_table.find(encoded_name) != con.var_table.end()) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): variable double definition (" << name << ")" << std::endl;
@@ -172,10 +176,11 @@ int ast_node_var_definition::evaluate(context& con) {
 	case lexer::token_type::_bool: value = false; break;
 	}
 	con.var_table.insert({ encoded_name, context::info { .modifier = modifier, .type = type, .value = value }});
+	con.stack.push_back(value);
 	return con.return_code;
 }
 
-int ast_node_if::evaluate(context& con) {
+std::optional<invalid_state> ast_node_if::evaluate(context& con) {
 	con.return_code = condition_block->evaluate(con);
 	OBJECT cond = std::visit(cast_bool_object {}, con.stack.back());
 	con.stack.pop_back();
@@ -190,7 +195,7 @@ int ast_node_if::evaluate(context& con) {
 	return con.return_code;
 }
 
-int ast_node_program::evaluate(context& con) {
+std::optional<invalid_state> ast_node_program::evaluate(context& con) {
 	for (const std::unique_ptr<ast_node_base>& item : exprs) {
 		con.return_code = item->evaluate(con);
 		if (con.is_abort) {

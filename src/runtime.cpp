@@ -1,16 +1,29 @@
 #include "runtime.hpp"
 #include <iostream>
+#include "state.hpp"
 
 
-int runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) {
+OBJECT runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& con) {
 	if (node) {
-		return node->evaluate(con);
+		if (std::optional<invalid_state> state = node->evaluate(con)) {
+			return state.value();
+		} else {
+			OBJECT return_value = con.stack.back();
+			con.stack.pop_back();
+			return return_value;
+		}
 	}
-	return con.return_code;
+	return invalid_state {};
 }
 
-int runtime::evaluate(const std::unique_ptr<ast_node_base>& node) {
-	context con { .return_code = 0, .is_abort = false };
-	return node->evaluate(con);
+OBJECT runtime::evaluate(const std::unique_ptr<ast_node_base>& node) {
+	context con { .return_code = std::nullopt, .is_abort = false };
+	if (std::optional<invalid_state> state = node->evaluate(con)) {
+		return state.value();
+	} else {
+		OBJECT return_value = con.stack.back();
+		con.stack.pop_back();
+		return return_value;
+	}
 }
 

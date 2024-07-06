@@ -1,7 +1,7 @@
 // line comment
 /* block comment */
 /* /* nested block comment */ */
-mut fugo : int = 5;
+mut fugo : int = 0;
 const hoge : int = 10;
 const test: bool = false;
 if (test) {
