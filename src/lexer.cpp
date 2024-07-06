@@ -32,6 +32,7 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = "/", .type = lexer::token_type::sign },
 		{ .str = "=", .type = lexer::token_type::sign },
 		{ .str = ":", .type = lexer::token_type::sign },
+		{ .str = ",", .type = lexer::token_type::comma },
 		{ .str = "{", .type = lexer::token_type::sign },
 		{ .str = "}", .type = lexer::token_type::sign },
 		{ .str = "(", .type = lexer::token_type::sign },
@@ -45,6 +46,7 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = "/*", .type = lexer::token_type::comment_begin },
 		{ .str = "*/", .type = lexer::token_type::comment_end },
 		{ .str = "//", .type = lexer::token_type::comment_line },
+		{ .str = "->", .type = lexer::token_type::arrow },
 		{ .str = "return", .type = lexer::token_type::_return },
 		{ .str = "int", .type = lexer::token_type::_int },
 		{ .str = "float", .type = lexer::token_type::_float },
@@ -55,6 +57,7 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = "mut", .type = lexer::token_type::_mut },
 		{ .str = "if", .type = lexer::token_type::_if },
 		{ .str = "else", .type = lexer::token_type::_else },
+		{ .str = "fn", .type = lexer::token_type::func },
 	};
 	if (*con.itr == '\n') {
 		++con.itr;
@@ -143,7 +146,7 @@ std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 			continue;
 		}
 
-		std::cout << "tokenize error (" << con.point.line << ", " << con.point.col << "):" << std::endl;
+		std::cout << "tokenize error (" << con.point.line << ", " << con.point.col << "):" << *con.itr << std::endl;
 		abort();
 	}
 

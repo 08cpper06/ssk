@@ -1,6 +1,10 @@
 // line comment
 /* block comment */
 /* /* nested block comment */ */
+fn max(const lhs: int, const rhs: int) -> bool {
+	return lhs > rhs;
+}
+
 mut fugo : int = 0;
 const hoge : int = 10;
 const test: bool = false;

@@ -139,7 +139,7 @@ std::unique_ptr<ast_node_base> parser::try_build_expr(std::vector<lexer::token>:
 		std::cout << "not found semicolon" << std::endl;
 		return std::make_unique<ast_node_error>("not found semicolon", itr->point);
 	}
-	++itr; /* skip semicolon */
+	++itr;
 	return std::make_unique<ast_node_expr>(std::move(expr), expr->point);
 }
 std::unique_ptr<ast_node_base> parser::try_build_return(std::vector<lexer::token>::const_iterator& itr) {
@@ -275,6 +275,98 @@ std::unique_ptr<ast_node_base> parser::try_build_block(std::vector<lexer::token>
 	return std::make_unique<ast_node_block>(std::move(exprs), itr->point);
 }
 
+std::unique_ptr<ast_node_base> parser::try_build_function(std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::func) {
+		return nullptr;
+	}
+	++itr;
+	if (itr->type != lexer::token_type::identifier) {
+		return std::make_unique<ast_node_error>("expeceted function name", itr->point);
+	}
+	std::string func_name = itr->raw;
+	code_point point = itr->point;
+	++itr;
+	if (itr->raw != "(") {
+		return std::make_unique<ast_node_error>("expeceted function name", itr->point);
+	}
+	++itr;
+	std::vector<ast_node_function::var_type> args;
+	ast_node_function::var_type var;
+	if (itr->raw != ")") {
+		while (itr->type == lexer::token_type::_const || itr->type == lexer::token_type::_mut) {
+			switch (itr->type) {
+			case lexer::token_type::_const: break;
+			case lexer::token_type::_mut: break;
+			default:
+				std::cout << "invalid modifier (" << itr->raw << ")" << std::endl;
+				return std::make_unique<ast_node_error>("invalid modifier: " + itr->raw, itr->point);
+			}
+			var.modifier = itr->type;
+			++itr;
+
+			if (itr->type != lexer::token_type::identifier) {
+				std::cout << "expected identifier" << std::endl;
+				return std::make_unique<ast_node_error>("expected identifier", itr->point);
+			}
+			var.name = itr->raw;
+			++itr;
+
+			if (itr->raw != ":") {
+				std::cout << "expected `:`" << std::endl;
+				return std::make_unique<ast_node_error>("expected identifier", itr->point);
+			}
+			++itr;
+
+			switch (itr->type) {
+			case lexer::token_type::_int: break;
+			case lexer::token_type::_float: break;
+			case lexer::token_type::_bool: break;
+			default:
+				std::cout << "invalid type (" << itr->raw << ")" << std::endl;
+				return std::make_unique<ast_node_error>("expeceted type (" + itr->raw + ")", point);
+			}
+			var.type = itr->type;
+			++itr;
+			args.push_back(var);
+
+			if (itr->raw == ")") {
+				break;
+			}
+			if (itr->type != lexer::token_type::comma) {
+				return std::make_unique<ast_node_error>("expected `)` or `,`", point);
+			}
+			++itr;
+		}
+	}
+	++itr;
+	if (itr->type != lexer::token_type::arrow) {
+		return std::make_unique<ast_node_error>("expeceted `->`", point);
+	}
+	++itr;
+	switch (itr->type) {
+	case lexer::token_type::_int: break;
+	case lexer::token_type::_float: break;
+	case lexer::token_type::_bool: break;
+	default:
+		std::cout << "invalid type (" << itr->raw << ")" << std::endl;
+		return std::make_unique<ast_node_error>("expeceted type (" + itr->raw + ")", point);
+	}
+	lexer::token_type return_type = itr->type;
+	++itr;
+
+	std::unique_ptr<ast_node_base> block = try_build_block(itr);
+	if (ast_node_block* casted_block = dynamic_cast<ast_node_block*>(block.get())) {
+		casted_block->block_name = "implement";
+	}
+	std::unique_ptr<ast_node_function> func = std::make_unique<ast_node_function>();
+	func->block = std::move(block);
+	func->return_type = return_type;
+	func->function_name = func_name;
+	func->point = point;
+	func->arguments = std::move(args);
+	return std::move(func);
+}
+
 bool parser::try_skip_comment(std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->type == lexer::token_type::comment_begin) {
 		int nest_count = 1;
@@ -311,7 +403,9 @@ std::unique_ptr<ast_node_base> parser::try_build_program(std::vector<lexer::toke
 		if (try_skip_comment(itr)) {
 			continue;
 		}
-		if (node = try_build_if(itr)) {
+		if (node = try_build_function(itr)) {
+			exprs.push_back(std::move(node));
+		} else if (node = try_build_if(itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_expr(itr)) {
 			exprs.push_back(std::move(node));

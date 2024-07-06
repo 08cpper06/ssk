@@ -15,6 +15,8 @@ public:
 		sign,
 		number,
 		semicolon,
+		comma,
+		arrow,
 
 		comment_begin,
 		comment_end,
@@ -37,6 +39,8 @@ public:
 
 		_true,
 		_false,
+
+		func,
 
 		eof,
 	};

@@ -10,14 +10,28 @@ std::string ast_evaluator::encode(const context& con, const std::string& name) {
 	return encoded_name + name;
 }
 
-std::map<std::string, context::info>::iterator ast_evaluator::find_var(context& con, const std::string name) {
+std::map<std::string, context::var_info>::iterator ast_evaluator::find_var(context& con, const std::string name) {
 	std::string _namespace;
-	std::map<std::string, context::info>::iterator itr = con.var_table.find(name);
-	std::map<std::string, context::info>::iterator tmp;
+	std::map<std::string, context::var_info>::iterator itr = con.var_table.find(name);
+	std::map<std::string, context::var_info>::iterator tmp;
 	for (const auto& item : con.name_space) {
 		_namespace += item + ".";
 		tmp = con.var_table.find(_namespace + name);
 		if (tmp != con.var_table.end()) {
+			itr = tmp;
+		}
+	}
+	return itr;
+}
+
+std::map<std::string, context::func_info>::iterator ast_evaluator::find_func(context& con, const std::string name) {
+	std::string _namespace;
+	std::map<std::string, context::func_info>::iterator itr = con.func_table.find(name);
+	std::map<std::string, context::func_info>::iterator tmp;
+	for (const auto& item : con.name_space) {
+		_namespace += item + ".";
+		tmp = con.func_table.find(_namespace + name);
+		if (tmp != con.func_table.end()) {
 			itr = tmp;
 		}
 	}
@@ -31,7 +45,7 @@ std::optional<invalid_state> ast_node_error::evaluate(context& con) {
 
 std::optional<invalid_state> ast_node_value::evaluate(context& con) {
 	if (value.type == lexer::token_type::identifier) {
-		std::map<std::string, context::info>::const_iterator itr = find_var(con, value.raw);
+		std::map<std::string, context::var_info>::const_iterator itr = find_var(con, value.raw);
 		if (itr == con.var_table.end()) {
 			std::cout << "runtime error (" << value.point.line << ", " << value.point.col << "): undefined method(" << value.raw << ")" << std::endl;
 			abort();
@@ -73,7 +87,7 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): lhs should be referencer" << std::endl;
 				abort();
 			}
-			std::map<std::string, context::info>::iterator itr = find_var(con, value->value.raw);
+			std::map<std::string, context::var_info>::iterator itr = find_var(con, value->value.raw);
 			if (itr == con.var_table.end()) {
 				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): not found method(" << value->value.raw << ")" << std::endl;
 				abort();
@@ -139,6 +153,21 @@ std::optional<invalid_state> ast_node_return::evaluate(context& con) {
 	con.is_abort = true;
 	return con.return_code;
 }
+std::optional<invalid_state> ast_node_function::evaluate(context& con) {
+	std::map<std::string, context::func_info>::iterator itr = find_func(con, function_name);
+	if (itr != con.func_table.end()) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): function double definition (" << function_name << ")" << std::endl;
+		abort();
+	}
+	context::func_info info;
+	for (const auto& arg : arguments) {
+		info.var_table.insert({ arg.name, context::var_info { .modifier = arg.modifier, .type = arg.type } });
+	}
+	info.type = return_type;
+	con.func_table.insert({ function_name, std::move(info) });
+	con.return_code = std::nullopt;
+	return con.return_code;
+}
 std::optional<invalid_state> ast_node_block::evaluate(context& con) {
 	con.name_space.push_back(block_name);
 	for (const std::unique_ptr<ast_node_base>& node : exprs) {
@@ -166,7 +195,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
 			abort();
 		}
-		con.var_table.insert({ encoded_name, context::info { .modifier = modifier, .type = type, .value = con.stack.back() }});
+		con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = con.stack.back() }});
 		con.stack.pop_back();
 		return con.return_code;
 	}
@@ -175,7 +204,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 	case lexer::token_type::_float: value = 0.f; break;
 	case lexer::token_type::_bool: value = false; break;
 	}
-	con.var_table.insert({ encoded_name, context::info { .modifier = modifier, .type = type, .value = value }});
+	con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = value }});
 	con.stack.push_back(value);
 	return con.return_code;
 }
