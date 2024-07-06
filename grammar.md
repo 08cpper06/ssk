@@ -88,6 +88,11 @@
 <b>*stmt*</b>:<br>
 &emsp;<b>*stmt*</b> return <b>*expression*</b> ;<br>
 &emsp;<b>*stmt*</b> <b>*variable-define*</b><br>
+&emsp;<b>*stmt*</b> <b>*identifer*</b> ( <b>*expressions*</b> ) <br>
+
+<b>*expressions*</b>:<br>
+&emsp;<b>*expression*</b><br>
+&emsp;<b>*expressions*</b> <b>*expression*</b>
 
 ## Variable define
 <b>*variable-define*</b>:<br>
