@@ -198,7 +198,11 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 				abort();
 			}
 
-			std::visit(operate_assign_object(std::get<int>(index)), itr->second.value, rhs_value);
+			OBJECT result = std::visit(operate_assign_object(std::get<int>(index)), itr->second.value, rhs_value);
+			if (result.index() == state_index) {
+				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): out of range (" << std::get<int>(index) << ")" << std::endl;
+				abort();
+			}
 
 		}
 		return con.return_code;

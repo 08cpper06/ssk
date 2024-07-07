@@ -303,7 +303,7 @@ public:
 		if (index) {
 			ret += index->log(indent + "\t\t");
 		}
-		ret += "</index>\n";
+		ret += indent + "\t</index>\n";
 		ret += indent + "</array-reference>\n";
 		return ret;
 	}

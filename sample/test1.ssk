@@ -7,7 +7,7 @@ fn main() -> int {
 	const hoge : int = 1000;
 	const test : bool = false;
 	mut arr: int[3];
-	arr[0] = 10;
+	arr[2] = 10;
 	if (test) {
 		fugo = 100;
 	} else {
