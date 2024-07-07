@@ -16,7 +16,7 @@ OBJECT runtime::evaluate(const std::unique_ptr<ast_node_base>& node, context& co
 			return return_value;
 		}
 	}
-	return invalid_state {};
+	return invalid_state("program in empty");
 }
 
 OBJECT runtime::evaluate(const std::unique_ptr<ast_node_base>& node) {

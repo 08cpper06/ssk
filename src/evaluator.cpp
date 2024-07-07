@@ -14,9 +14,14 @@ std::map<std::string, context::var_info>::iterator ast_evaluator::find_var(conte
 	std::string _namespace;
 	std::map<std::string, context::var_info>::iterator itr = con.var_table.find(name);
 	std::map<std::string, context::var_info>::iterator tmp;
-	for (const auto& item : con.name_space) {
+	std::vector<std::string> candiate;
+	for (const std::string& item : con.name_space) {
 		_namespace += item + ".";
-		tmp = con.var_table.find(_namespace + name);
+		candiate.push_back(_namespace + name);
+	}
+
+	for (int i = candiate.size() - 1; i >= 0; --i) {
+		tmp = con.var_table.find(candiate[i]);
 		if (tmp != con.var_table.end()) {
 			itr = tmp;
 		}
@@ -98,6 +103,7 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 		con.var_table.insert({ encode(con, function_name) + "." + info.name, context::var_info {.modifier = info.modifier, .type = info.type, .value = value}});
 	}
 	con.return_code = itr->second.block->evaluate(con);
+	con.is_abort = false;
 
 	if (con.stack.back().index() == bool_index && itr->second.type != lexer::token_type::_bool) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected bool value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
@@ -128,7 +134,7 @@ std::optional<invalid_state> ast_node_array_refernce::evaluate(context& con) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): index is invalid" << std::endl;
 		abort();
 	}
-		std::map<std::string, context::var_info>::iterator itr = find_var(con, name.raw);
+	std::map<std::string, context::var_info>::iterator itr = find_var(con, name.raw);
 	if (itr == con.var_table.end()) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): undefined method(" << name.raw << ")" << std::endl;
 		abort();
@@ -213,7 +219,7 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 		abort();
 	} 
 
-	OBJECT result;
+	OBJECT result = invalid_state("no result");
 	if (op == "+") {
 		result = std::visit(operate_add_object(-1, -1), lhs_value, rhs_value);
 	} else if (op == "-") {
@@ -240,7 +246,7 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 		result = std::visit(operate_greater_than_or_equal_object(-1, -1), lhs_value, rhs_value);
 	}
 
-	con.stack.push_back(result);
+	con.stack.push_back(std::move(result));
 	con.return_code = std::visit(get_object_return_code {}, result);
 
 	return con.return_code;
@@ -333,7 +339,6 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 	}
 	}
 	con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = value }});
-	con.stack.push_back(value);
 	return con.return_code;
 }
 
