@@ -281,23 +281,57 @@ public:
 	lexer::token_type return_type;
 };
 
+class ast_node_array_refernce : public ast_node_base {
+public:
+	struct ast_array_reference_tag : public ast_base_tag {};
+	inline static constexpr ast_array_reference_tag tag;
+public:
+	ast_node_array_refernce(const lexer::token& name, std::unique_ptr<ast_node_base>&& index, code_point point) :
+		name(name),
+		index(std::move(index))
+	{
+		this->point = point;
+	}
+
+	virtual ~ast_node_array_refernce() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_array_refernce::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = indent + "<array-reference>\n";
+		ret += indent + "\t<variable>" + name.raw + "</variable>\n";
+		ret += indent + "\t<index>\n";
+		if (index) {
+			ret += index->log(indent + "\t\t");
+		}
+		ret += "</index>\n";
+		ret += indent + "</array-reference>\n";
+		return ret;
+	}
+	virtual std::optional<invalid_state> evaluate(context& con);
+
+	lexer::token name;
+	std::unique_ptr<ast_node_base> index;
+};
+
 class ast_node_var_definition : public ast_node_base {
 public:
 	struct ast_var_definition_tag : public ast_base_tag {};
 	inline static constexpr ast_var_definition_tag tag;
 public:
-	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, code_point point) :
-		modifier(modifier),
-		name(name),
-		type(type)
-	{
-		this->point = point;
-	}
-	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, std::unique_ptr<ast_node_base>&& init_value, code_point point) :
+	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, int size, code_point point) :
 		modifier(modifier),
 		name(name),
 		type(type),
-		init_value(std::move(init_value))
+		size(size)
+	{
+		this->point = point;
+	}
+	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, int size, std::unique_ptr<ast_node_base>&& init_value, code_point point) :
+		modifier(modifier),
+		name(name),
+		type(type),
+		init_value(std::move(init_value)),
+		size(size)
 	{
 		this->point = point;
 	}
@@ -315,6 +349,11 @@ public:
 		case lexer::token_type::_int: ret += " int"; break;
 		case lexer::token_type::_float: ret += " float"; break;
 		}
+		if (size > 0) {
+			ret += "[" + std::to_string(size)  + "]";
+		} else if (!size) {
+			ret += "[]";
+		}
 		ret += "\">\n";
 		ret += indent + "\t<name>" + name + "</name>\n";
 		if (init_value) {
@@ -330,6 +369,7 @@ public:
 	std::string name;
 	lexer::token_type type;
 	std::unique_ptr<ast_node_base> init_value;
+	int size;
 };
 
 class ast_node_if : public ast_node_base {
@@ -467,6 +507,7 @@ class parser {
 public:
 	static std::unique_ptr<ast_node_base> try_build_value(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_call_function(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_reference_array(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_timedivide_node(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_plusminus_node(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_equality(context& con, std::vector<lexer::token>::const_iterator& itr);

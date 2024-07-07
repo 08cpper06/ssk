@@ -6,6 +6,9 @@ std::unique_ptr<ast_node_base> parser::try_build_value(context& con, std::vector
 	if (itr->type == lexer::token_type::identifier && (itr + 1)->raw == "(") {
 		return try_build_call_function(con, itr);
 	}
+	if (itr->type == lexer::token_type::identifier && (itr + 1)->raw == "[") {
+		return try_build_reference_array(con, itr);
+	}
 	if (itr->type != lexer::token_type::number &&
 		itr->type != lexer::token_type::_true &&
 		itr->type != lexer::token_type::_false &&
@@ -182,6 +185,27 @@ std::unique_ptr<ast_node_base> parser::try_build_call_function(context& con, std
 	return std::make_unique<ast_node_call_function>(name, std::move(arguments), point);
 }
 
+std::unique_ptr<ast_node_base> parser::try_build_reference_array(context& con, std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::identifier) {
+		return nullptr;
+	}
+	lexer::token name = *itr;
+	std::vector<lexer::token>::const_iterator tmp = itr;
+	++tmp;
+	if (tmp->raw != "[") {
+		return nullptr;
+	}
+	code_point point = tmp->point;
+	++tmp;
+	std::unique_ptr<ast_node_base> index = try_build_assign(con, tmp);
+	if (tmp->raw != "]") {
+		itr = tmp;
+		return std::make_unique<ast_node_error>("expected `]`", tmp->point);
+	}
+	itr = ++tmp;
+	return std::make_unique<ast_node_array_refernce>(name, std::move(index), point);
+}
+
 std::unique_ptr<ast_node_base> parser::try_build_return(context& con, std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->type != lexer::token_type::_return) {
 		return nullptr;
@@ -226,10 +250,32 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	}
 	lexer::token_type type = tmp->type;
 	++tmp;
+	int size = -1;
+	if (tmp->raw == "[") {
+		size = 0;
+		++tmp;
+		if (tmp->type == lexer::token_type::number) {
+			if (tmp->raw.find(".") != std::string::npos) {
+				itr = ++tmp;
+				point = itr->point;
+				if (itr->raw == "]") {
+					++itr;
+				}
+				return std::make_unique<ast_node_error>("dimension should be integer", point);
+			}
+			size = std::atoi(tmp->raw.c_str());
+			++tmp;
+		} else if (tmp->raw != "]") {
+			itr = tmp;
+			std::cout << "expected `]`" << tmp->raw << ")" << std::endl;
+			return std::make_unique<ast_node_error>("expected `]`", itr->point);
+		}
+		++tmp;
+	}
 
 	if (tmp->type == lexer::token_type::semicolon) {
 		itr = ++tmp;
-		return std::make_unique<ast_node_var_definition>(modifier, name, type, point);
+		return std::make_unique<ast_node_var_definition>(modifier, name, type, size, point);
 	}
 
 	if (tmp->raw != "=") {
@@ -247,7 +293,7 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	}
 
 	itr = tmp;
-	return std::make_unique<ast_node_var_definition>(modifier, name, type, std::move(init_value), point);
+	return std::make_unique<ast_node_var_definition>(modifier, name, type, size, std::move(init_value), point);
 }
 
 std::unique_ptr<ast_node_base> parser::try_build_if(context& con, std::vector<lexer::token>::const_iterator& itr) {

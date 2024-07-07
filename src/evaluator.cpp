@@ -52,8 +52,7 @@ std::optional<invalid_state> ast_node_value::evaluate(context& con) {
 		}
 		con.stack.push_back(itr->second.value);
 		return std::visit(get_object_return_code{}, itr->second.value);
-	}
-	else {
+	} else {
 		if (value.type == lexer::token_type::_true) {
 			con.stack.push_back(true);
 			con.return_code = std::nullopt;
@@ -117,6 +116,29 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 	return con.return_code;
 }
 
+std::optional<invalid_state> ast_node_array_refernce::evaluate(context& con) {
+	if (!index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): not found index" << std::endl;
+		abort();
+	}
+	con.return_code = index->evaluate(con);
+	OBJECT obj_index = con.stack.back();
+	con.stack.pop_back();
+	if (obj_index.index() != int_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): index is invalid" << std::endl;
+		abort();
+	}
+		std::map<std::string, context::var_info>::iterator itr = find_var(con, name.raw);
+	if (itr == con.var_table.end()) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): undefined method(" << name.raw << ")" << std::endl;
+		abort();
+	}
+
+	OBJECT value = std::visit(operate_index_ref_object(std::get<int>(obj_index)), itr->second.value);
+	con.stack.push_back(std::move(value));
+	return con.return_code;
+}
+
 std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 	con.return_code = lhs->evaluate(con);
 	con.return_code = rhs->evaluate(con);
@@ -144,6 +166,40 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 				abort();
 			}
 			itr->second.value = std::move(rhs_value);
+		} else if (is_a<ast_node_array_refernce>(lhs.get())) {
+			ast_node_array_refernce* reference = static_cast<ast_node_array_refernce*>(lhs.get());
+			std::map<std::string, context::var_info>::iterator itr = find_var(con, reference->name.raw);
+			if (itr == con.var_table.end()) {
+				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): not found method(" << reference->name.raw << ")" << std::endl;
+				abort();
+			}
+			if (itr->second.modifier == lexer::token_type::_const) {
+				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): not constant value(" << reference->name.raw << ")" << std::endl;
+				abort();
+			}
+			if (itr->second.value.index() == float_array_index &&
+				rhs_value.index() != float_index) {
+				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): assign different type(`float array` != `" << std::visit(get_object_type_name{}, rhs_value) << "`)" << std::endl;
+				abort();
+			} else if (itr->second.value.index() == float_array_index &&
+				rhs_value.index() != int_index) {
+				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): assign different type(`int array" << std::visit(get_object_type_name{}, itr->second.value) << "` != `" << std::visit(get_object_type_name{}, rhs_value) << "`)" << std::endl;
+				abort();
+			} else if (itr->second.value.index() == bool_array_index &&
+				rhs_value.index() != bool_index) {
+				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): assign different type(`bool array" << std::visit(get_object_type_name{}, itr->second.value) << "` != `" << std::visit(get_object_type_name{}, rhs_value) << "`)" << std::endl;
+				abort();
+			}
+			reference->index->evaluate(con);
+			OBJECT index = con.stack.back();
+			con.stack.pop_back();
+			if (index.index() != int_index) {
+				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): assign different type(`" << std::visit(get_object_type_name{}, itr->second.value) << "` != `" << std::visit(get_object_type_name{}, rhs_value) << "`)" << std::endl;
+				abort();
+			}
+
+			std::visit(operate_assign_object(std::get<int>(index)), itr->second.value, rhs_value);
+
 		}
 		return con.return_code;
 	}
@@ -155,29 +211,29 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 
 	OBJECT result;
 	if (op == "+") {
-		result = std::visit(operate_add_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_add_object(-1, -1), lhs_value, rhs_value);
 	} else if (op == "-") {
-		result = std::visit(operate_sub_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_sub_object(-1, -1), lhs_value, rhs_value);
 	} else if (op == "*") {
-		result = std::visit(operate_mul_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_mul_object(-1, -1), lhs_value, rhs_value);
 	} else if (op == "/") {
-		result = std::visit(operate_div_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_div_object(-1, -1), lhs_value, rhs_value);
 		if (result.index() == state_index) {
 			std::cout << "runtime error (" << point.line << ", " << point.col << "): divide by zero" << std::endl;
 			abort();
 		}
 	} else if (op == "==") {
-		result = std::visit(operate_equal_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_equal_object (-1, -1), lhs_value, rhs_value);
 	} else if (op == "!=") {
-		result = std::visit(operate_not_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_not_object (-1, -1), lhs_value, rhs_value);
 	} else if (op == "<") {
-		result = std::visit(operate_less_than_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_less_than_object(-1, -1), lhs_value, rhs_value);
 	} else if (op == ">") {
-		result = std::visit(operate_greater_than_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_greater_than_object(-1, -1), lhs_value, rhs_value);
 	} else if (op == "<=") {
-		result = std::visit(operate_less_than_or_equal_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_less_than_or_equal_object(-1, -1), lhs_value, rhs_value);
 	} else if (op == ">=") {
-		result = std::visit(operate_greater_than_or_equal_object {}, lhs_value, rhs_value);
+		result = std::visit(operate_greater_than_or_equal_object(-1, -1), lhs_value, rhs_value);
 	}
 
 	con.stack.push_back(result);
@@ -247,9 +303,30 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 		return con.return_code;
 	}
 	switch (type) {
-	case lexer::token_type::_int: value = 0; break;
-	case lexer::token_type::_float: value = 0.f; break;
-	case lexer::token_type::_bool: value = false; break;
+	case lexer::token_type::_int: {
+		if (size >= 0) {
+			value = std::vector<int>(size, 0);
+		} else {
+			value = 0;
+		}
+		break;
+	}
+	case lexer::token_type::_float: {
+		if (size >= 0) {
+			value = std::vector<float>(size, 0.f);
+		} else {
+			value = 0.f;
+		}
+		break;
+	}
+	case lexer::token_type::_bool: {
+		if (size >= 0) {
+			value = std::vector<bool>(size, false);
+		} else {
+			value = false;
+		}
+		break;
+	}
 	}
 	con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = value }});
 	con.stack.push_back(value);
