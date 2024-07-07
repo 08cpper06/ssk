@@ -45,7 +45,7 @@ std::map<std::string, context::func_info>::iterator ast_evaluator::find_func(con
 
 std::optional<invalid_state> ast_node_error::evaluate(context& con) {
 	std::cout << "runtime error (" << point.line << ", " << point.col << "): syntax error(" << text << ")" << std::endl;
-	abort();
+	con.abort();
 }
 
 std::optional<invalid_state> ast_node_value::evaluate(context& con) {
@@ -53,7 +53,7 @@ std::optional<invalid_state> ast_node_value::evaluate(context& con) {
 		std::map<std::string, context::var_info>::const_iterator itr = find_var(con, value.raw);
 		if (itr == con.var_table.end()) {
 			std::cout << "runtime error (" << value.point.line << ", " << value.point.col << "): undefined method(" << value.raw << ")" << std::endl;
-			abort();
+			con.abort();
 		}
 		con.stack.push_back(itr->second.value);
 		return std::visit(get_object_return_code{}, itr->second.value);
@@ -82,16 +82,16 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 	std::map<std::string, context::func_info>::iterator itr = con.func_table.find(function_name);
 	if (itr == con.func_table.end()) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): not found method(" << function_name << ")" << std::endl;
-		abort();
+		con.abort();
 	}
 	if (!(itr->second.block)) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): not found implement (" << function_name << ")" << std::endl;
-		abort();
+		con.abort();
 	}
 
 	if (itr->second.arguments.size() != arguments.size()) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): the count of arguments is mismatch (" << function_name << ")" << std::endl;
-		abort();
+		con.abort();
 	}
 
 	int idx = 0;
@@ -107,13 +107,13 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 
 	if (con.stack.back().index() == bool_index && itr->second.type != lexer::token_type::_bool) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected bool value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
-		abort();
+		con.abort();
 	} else if (con.stack.back().index() == int_index && itr->second.type != lexer::token_type::_int) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected int value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
-		abort();
+		con.abort();
 	} else if (con.stack.back().index() == float_index && itr->second.type != lexer::token_type::_float) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected float value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
-		abort();
+		con.abort();
 	}
 
 	for (const context::func_info::arg_info& info : itr->second.arguments) {
@@ -125,19 +125,19 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 std::optional<invalid_state> ast_node_array_refernce::evaluate(context& con) {
 	if (!index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): not found index" << std::endl;
-		abort();
+		con.abort();
 	}
 	con.return_code = index->evaluate(con);
 	OBJECT obj_index = con.stack.back();
 	con.stack.pop_back();
 	if (obj_index.index() != int_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): index is invalid" << std::endl;
-		abort();
+		con.abort();
 	}
 	std::map<std::string, context::var_info>::iterator itr = find_var(con, name.raw);
 	if (itr == con.var_table.end()) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): undefined method(" << name.raw << ")" << std::endl;
-		abort();
+		con.abort();
 	}
 
 	OBJECT value = std::visit(operate_index_ref_object(std::get<int>(obj_index)), itr->second.value);
@@ -156,20 +156,20 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 			ast_node_value* value = static_cast<ast_node_value*>(lhs.get());
 			if (value->value.type != lexer::token_type::identifier) {
 				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): lhs should be referencer" << std::endl;
-				abort();
+				con.abort();
 			}
 			std::map<std::string, context::var_info>::iterator itr = find_var(con, value->value.raw);
 			if (itr == con.var_table.end()) {
 				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): not found method(" << value->value.raw << ")" << std::endl;
-				abort();
+				con.abort();
 			}
 			if (itr->second.modifier == lexer::token_type::_const) {
 				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): not constant value(" << value->value.raw << ")" << std::endl;
-				abort();
+				con.abort();
 			}
 			if (itr->second.value.index() != rhs_value.index()) {
 				std::cout << "runtime error (" << value->point.line << ", " << value->point.col << "): assign different type(`" << std::visit(get_object_type_name {}, itr->second.value) << "` != `" << std::visit(get_object_type_name {}, rhs_value) << "`)" << std::endl;
-				abort();
+				con.abort();
 			}
 			itr->second.value = std::move(rhs_value);
 		} else if (is_a<ast_node_array_refernce>(lhs.get())) {
@@ -177,37 +177,37 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 			std::map<std::string, context::var_info>::iterator itr = find_var(con, reference->name.raw);
 			if (itr == con.var_table.end()) {
 				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): not found method(" << reference->name.raw << ")" << std::endl;
-				abort();
+				con.abort();
 			}
 			if (itr->second.modifier == lexer::token_type::_const) {
 				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): not constant value(" << reference->name.raw << ")" << std::endl;
-				abort();
+				con.abort();
 			}
 			if (itr->second.value.index() == float_array_index &&
 				rhs_value.index() != float_index) {
 				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): assign different type(`float array` != `" << std::visit(get_object_type_name{}, rhs_value) << "`)" << std::endl;
-				abort();
+				con.abort();
 			} else if (itr->second.value.index() == float_array_index &&
 				rhs_value.index() != int_index) {
 				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): assign different type(`int array" << std::visit(get_object_type_name{}, itr->second.value) << "` != `" << std::visit(get_object_type_name{}, rhs_value) << "`)" << std::endl;
-				abort();
+				con.abort();
 			} else if (itr->second.value.index() == bool_array_index &&
 				rhs_value.index() != bool_index) {
 				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): assign different type(`bool array" << std::visit(get_object_type_name{}, itr->second.value) << "` != `" << std::visit(get_object_type_name{}, rhs_value) << "`)" << std::endl;
-				abort();
+				con.abort();
 			}
 			reference->index->evaluate(con);
 			OBJECT index = con.stack.back();
 			con.stack.pop_back();
 			if (index.index() != int_index) {
 				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): assign different type(`" << std::visit(get_object_type_name{}, itr->second.value) << "` != `" << std::visit(get_object_type_name{}, rhs_value) << "`)" << std::endl;
-				abort();
+				con.abort();
 			}
 
 			OBJECT result = std::visit(operate_assign_object(std::get<int>(index)), itr->second.value, rhs_value);
 			if (result.index() == state_index) {
 				std::cout << "runtime error (" << reference->point.line << ", " << reference->point.col << "): out of range (" << std::get<int>(index) << ")" << std::endl;
-				abort();
+				con.abort();
 			}
 
 		}
@@ -216,7 +216,7 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 
 	if (lhs_value.index() != rhs_value.index()) {
 		std::cout << "runtime error (" << lhs->point.line << "," << lhs->point.col << "): assign different type(`" << std::visit(get_object_type_name {}, lhs_value) << "` " << op << " `" << std::visit(get_object_type_name {}, rhs_value) << "`)" << std::endl;
-		abort();
+		con.abort();
 	} 
 
 	OBJECT result = invalid_state("no result");
@@ -230,7 +230,7 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 		result = std::visit(operate_div_object(-1, -1), lhs_value, rhs_value);
 		if (result.index() == state_index) {
 			std::cout << "runtime error (" << point.line << ", " << point.col << "): divide by zero" << std::endl;
-			abort();
+			con.abort();
 		}
 	} else if (op == "==") {
 		result = std::visit(operate_equal_object (-1, -1), lhs_value, rhs_value);
@@ -266,7 +266,7 @@ std::optional<invalid_state> ast_node_function::evaluate(context& con) {
 	std::map<std::string, context::func_info>::iterator itr = find_func(con, function_name);
 	if (itr != con.func_table.end()) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): function double definition (" << function_name << ")" << std::endl;
-		abort();
+		con.abort();
 	}
 	context::func_info info;
 	for (const ast_node_function::var_type& arg : arguments) {
@@ -293,20 +293,20 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 	std::string encoded_name = encode(con, name);
 	if (con.var_table.find(encoded_name) != con.var_table.end()) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): variable double definition (" << name << ")" << std::endl;
-		abort();
+		con.abort();
 	}
 	OBJECT value = 0;
 	if (init_value) {
 		con.return_code = init_value->evaluate(con);
 		if (type == lexer::token_type::_bool && con.stack.back().index() != bool_index) {
 			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not bool (" << name << ")" << std::endl;
-			abort();
+			con.abort();
 		} else if (type == lexer::token_type::_int && con.stack.back().index() != int_index) {
 			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not int (" << name << ")" << std::endl;
-			abort();
+			con.abort();
 		} else if (type == lexer::token_type::_float && con.stack.back().index() != float_index) {
 			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
-			abort();
+			con.abort();
 		}
 		con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = con.stack.back() }});
 		con.stack.pop_back();

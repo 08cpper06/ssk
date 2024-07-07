@@ -27,6 +27,10 @@ struct context {
 		ast_node_base* block;
 	};
 
+	void abort() {
+		::abort();
+	}
+
 	std::optional<invalid_state> return_code;
 	int is_abort { 0 };
 	std::map<std::string, var_info> var_table;
