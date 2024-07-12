@@ -473,6 +473,34 @@ public:
 	std::unique_ptr<ast_node_base> block;
 };
 
+class ast_node_initial_list : public ast_node_base {
+public:
+	struct ast_initial_list_tag : public ast_base_tag {};
+	inline static constexpr ast_initial_list_tag tag;
+public:
+	ast_node_initial_list(std::vector<std::unique_ptr<ast_node_base>>&& values, code_point point) :
+		values(std::move(values))
+	{
+		this->point = point;
+	}
+	virtual ~ast_node_initial_list() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_initial_list::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = indent + "<initialize>\n";
+
+		for (const std::unique_ptr<ast_node_base>& value : values) {
+			ret += indent + "\t<value>\n";
+			ret += value->log(indent + "\t\t");
+			ret += indent + "\t</value>\n";
+		}
+		return ret + indent + "</initialize>\n";
+	}
+	virtual std::optional<invalid_state> evaluate(context& con);
+
+	std::vector<std::unique_ptr<ast_node_base>> values;
+};
+
 class ast_node_program : public ast_node_base {
 public:
 	struct ast_expr_tag : public ast_base_tag {};
@@ -515,6 +543,7 @@ public:
 	static std::unique_ptr<ast_node_base> try_build_expr(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_return(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_var_definition(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_initial_list(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_assign(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_if(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_while(context& con, std::vector<lexer::token>::const_iterator& itr);

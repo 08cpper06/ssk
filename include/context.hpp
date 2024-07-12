@@ -32,7 +32,7 @@ struct context {
 	}
 
 	std::optional<invalid_state> return_code;
-	int is_abort { 0 };
+	bool is_abort { false };
 	std::map<std::string, var_info> var_table;
 	std::map<std::string, func_info> func_table;
 	std::list<std::string> name_space;

@@ -20,6 +20,114 @@ struct get_object_type_name {
 	}
 };
 
+struct make_as_array {
+	OBJECT operator()(int value) noexcept {
+		return std::vector<int>({ value });
+	}
+	OBJECT operator()(float value) noexcept {
+		return std::vector<float>({ value });
+	}
+	OBJECT operator()(bool value) noexcept {
+		return std::vector<bool>({ value });
+	}
+	OBJECT operator()(const auto&) noexcept {
+		return invalid_state("make list is failed");
+	}
+};
+
+struct get_array_size {
+	int operator()(int value) noexcept {
+		return 1;
+	}
+	int operator()(float value) noexcept {
+		return 1;
+	}
+	int operator()(bool value) noexcept {
+		return 1;
+	}
+
+	int operator()(const std::vector<int>& values) noexcept {
+		return values.size();
+	}
+	int operator()(const std::vector<float>& values) noexcept {
+		return values.size();
+	}
+	int operator()(const std::vector<bool>& values) noexcept {
+		return values.size();
+	}
+
+	int operator()(const auto&) {
+		return -1;
+	}
+};
+
+struct make_insert_array {
+	make_insert_array(int index) :
+		index(index)
+	{}
+
+	std::optional<invalid_state> operator()(std::vector<int>& values, int value) noexcept {
+		if (index < 0) {
+			values.insert(values.begin() + (values.size() + index + 1), value);
+		} else {
+			values.insert(values.begin() + index, value);
+		}
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(std::vector<float>& values, float value) noexcept {
+		if (index < 0) {
+			values.insert(values.begin() + (values.size() + index + 1), value);
+		} else {
+			values.insert(values.begin() + index, value);
+		}
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(std::vector<bool>& values, bool value) noexcept {
+		if (index < 0) {
+			values.insert(values.begin() + (values.size() + index + 1), value);
+		} else {
+			values.insert(values.begin() + index, value);
+		}
+		return std::nullopt;
+	}
+
+	std::optional<invalid_state> operator()(std::vector<int>& values) noexcept {
+		if (index < 0) {
+			values.insert(values.begin() + (values.size() + index + 1), int());
+		} else {
+			values.insert(values.begin() + index, int());
+		}
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(std::vector<float>& values) noexcept {
+		if (index < 0) {
+			values.insert(values.begin() + (values.size() + index + 1), float());
+		}
+		else {
+			values.insert(values.begin() + index, float());
+		}
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(std::vector<bool>& values) noexcept {
+		if (index < 0) {
+			values.insert(values.begin() + (values.size() + index + 1), bool());
+		}
+		else {
+			values.insert(values.begin() + index, bool());
+		}
+		return std::nullopt;
+	}
+
+	std::optional<invalid_state> operator()(auto) noexcept {
+		return invalid_state("failed to insert to array");
+	}
+	std::optional<invalid_state> operator()(auto, auto) noexcept {
+		return invalid_state("failed to insert to array");
+	}
+
+	int index { -1 };
+};
+
 struct get_object_return_code {
 	std::optional<invalid_state> operator()(int value) noexcept {
 		return std::nullopt;

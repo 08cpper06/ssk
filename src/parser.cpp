@@ -285,15 +285,72 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	}
 	point = tmp->point;
 	++tmp;
-	std::unique_ptr<ast_node_base> init_value = try_build_expr(con, tmp);
-	if (!init_value) {
-		itr = tmp;
-		std::cout << "initial value is invalid" << std::endl;
-		return std::make_unique<ast_node_error>("initial value is invalid", itr->point);
+	std::unique_ptr<ast_node_base> init_value;
+	if (size < 0) {
+		init_value = try_build_expr(con, tmp);
+		if (!init_value) {
+			itr = tmp;
+			std::cout << "initial value is invalid" << std::endl;
+			return std::make_unique<ast_node_error>("initial value is invalid", itr->point);
+		}
+	} else {
+		init_value = try_build_initial_list(con, tmp);
+		if (!init_value) {
+			itr = tmp;
+			std::cout << "initial value is invalid" << std::endl;
+			return std::make_unique<ast_node_error>("initial value is invalid", itr->point);
+		}
+		if (tmp->type != lexer::token_type::semicolon) {
+			std::cout << "not found semicolon" << std::endl;
+			return std::make_unique<ast_node_error>("not found semicolon", itr->point);
+		}
+		if (is_a<ast_node_initial_list>(init_value.get())) {
+			ast_node_initial_list* values = static_cast<ast_node_initial_list*>(init_value.get());
+			if (size == 0) {
+				size = values->values.size();
+			} else if (size < values->values.size()) {
+				std::cout << "the array size < the size of initialize_list (" << size << "<" << values->values.size() << ")" << std::endl;
+				while (tmp->type != lexer::token_type::eof && tmp->raw != "}") {
+					++tmp;
+				}
+				itr = tmp;
+				return std::make_unique<ast_node_error>("the array size < the size of initialize_list (" + std::to_string(size) + "<" + std::to_string(values->values.size()) + ")", itr->point);
+			}
+		}
+		++tmp;
 	}
 
 	itr = tmp;
 	return std::make_unique<ast_node_var_definition>(modifier, name, type, size, std::move(init_value), point);
+}
+
+std::unique_ptr<ast_node_base> parser::try_build_initial_list(context& con, std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->raw != "{") {
+		return nullptr;
+	}
+	code_point bgn_point = itr->point;
+	++itr;
+	std::vector<std::unique_ptr<ast_node_base>> values;
+	while (itr->raw != "}") {
+		std::unique_ptr<ast_node_base> value = try_build_value(con, itr);
+		if (!value) {
+			values.push_back(std::make_unique<ast_node_error>("invalid token in the initialize_list", itr->point));
+		} else {
+			values.push_back(std::move(value));
+		}
+		if (itr->raw == "}") {
+			break;
+		}
+		if (itr->raw != ",") {
+			values.push_back(std::make_unique<ast_node_error>("expected `,`", itr->point));
+		}
+		++itr;
+		if (itr->type == lexer::token_type::eof) {
+			return std::make_unique<ast_node_error>("expected `}`", bgn_point);
+		}
+	}
+	++itr;
+	return std::make_unique<ast_node_initial_list>(std::move(values), bgn_point);
 }
 
 std::unique_ptr<ast_node_base> parser::try_build_if(context& con, std::vector<lexer::token>::const_iterator& itr) {

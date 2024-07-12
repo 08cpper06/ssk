@@ -12,6 +12,8 @@ struct code_point {
 class lexer {
 public:
 	enum class token_type : unsigned char {
+		unknown,
+
 		sign,
 		number,
 		semicolon,

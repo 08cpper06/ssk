@@ -46,6 +46,7 @@ std::map<std::string, context::func_info>::iterator ast_evaluator::find_func(con
 std::optional<invalid_state> ast_node_error::evaluate(context& con) {
 	std::cout << "runtime error (" << point.line << ", " << point.col << "): syntax error(" << text << ")" << std::endl;
 	con.abort();
+	return invalid_state(text);
 }
 
 std::optional<invalid_state> ast_node_value::evaluate(context& con) {
@@ -298,18 +299,43 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 	OBJECT value = 0;
 	if (init_value) {
 		con.return_code = init_value->evaluate(con);
-		if (type == lexer::token_type::_bool && con.stack.back().index() != bool_index) {
-			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not bool (" << name << ")" << std::endl;
-			con.abort();
-		} else if (type == lexer::token_type::_int && con.stack.back().index() != int_index) {
-			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not int (" << name << ")" << std::endl;
-			con.abort();
-		} else if (type == lexer::token_type::_float && con.stack.back().index() != float_index) {
-			std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
-			con.abort();
+		if (size == 0) {
+			if (!is_a<ast_node_initial_list>(init_value.get())) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): array = `not initialize list`; " << std::endl;
+				con.abort();
+			}
+			con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = con.stack.back() }});
+		} else if (size > 0) {
+			int init_value_size = std::visit(get_array_size {}, con.stack.back());
+			if (init_value_size < 0) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): invalid initialize_list" << std::endl;
+				con.abort();
+			}
+			if (size < init_value_size) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): ";
+				std::cout << "the array size < the size of initialize_list (" << size << "<" << init_value_size << ")" << std::endl;
+				con.abort();
+			} if (size > init_value_size) {
+				for (int i = init_value_size; i < size; ++i) {
+					std::visit(make_insert_array(-1), con.stack.back());
+				}
+			}
+			con.var_table.insert({ encoded_name, context::var_info {.modifier = modifier, .type = type, .value = con.stack.back() } });
+			con.stack.pop_back();
+		} else {
+			if (type == lexer::token_type::_bool && con.stack.back().index() != bool_index) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not bool (" << name << ")" << std::endl;
+				con.abort();
+			} else if (type == lexer::token_type::_int && con.stack.back().index() != int_index) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not int (" << name << ")" << std::endl;
+				con.abort();
+			} else if (type == lexer::token_type::_float && con.stack.back().index() != float_index) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
+				con.abort();
+			}
+			con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = con.stack.back() }});
+			con.stack.pop_back();
 		}
-		con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = con.stack.back() }});
-		con.stack.pop_back();
 		return con.return_code;
 	}
 	switch (type) {
@@ -388,6 +414,38 @@ std::optional<invalid_state> ast_node_do_while::evaluate(context& con) {
 			break;
 		}
 	} while (true);
+	return con.return_code;
+}
+std::optional<invalid_state> ast_node_initial_list::evaluate(context& con) {
+	int type_index = 0;
+	int count = 0;
+	OBJECT object;
+	for (const std::unique_ptr<ast_node_base>& ptr : values) {
+		if (is_a<ast_node_error>(ptr.get())) {
+			ast_node_error* error = static_cast<ast_node_error*>(ptr.get());
+			std::cout << "runtime error (" << point.line << ", " << point.col << "): " << error->text << std::endl;
+			con.return_code = invalid_state("invalid token in the initialize list");
+			con.abort();
+		} else if (is_a<ast_node_value>(ptr.get())) {
+			ast_node_value* value = static_cast<ast_node_value*>(ptr.get());
+			con.return_code = value->evaluate(con);
+			int current_type = con.stack.back().index();
+			if (!type_index) {
+				object = std::visit(make_as_array {}, con.stack.back());
+				con.stack.pop_back();
+			} else if (type_index != current_type) {
+				std::cout << "runtime error (" << point.line << ", " << point.col << "): different type is found in the initialize list (index: " << count << ")" << std::endl;
+				con.return_code = invalid_state("different type is found in the initialize list");
+				con.abort();
+			} else {
+				std::visit(make_insert_array(-1), object, con.stack.back());
+				con.stack.pop_back();
+			}
+			type_index = current_type;
+		}
+		++count;
+	}
+	con.stack.push_back(object);
 	return con.return_code;
 }
 
