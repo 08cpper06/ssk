@@ -20,7 +20,7 @@ struct get_object_type_name {
 	}
 };
 
-struct make_as_array {
+struct make_array {
 	OBJECT operator()(int value) noexcept {
 		return std::vector<int>({ value });
 	}
@@ -29,6 +29,15 @@ struct make_as_array {
 	}
 	OBJECT operator()(bool value) noexcept {
 		return std::vector<bool>({ value });
+	}
+	OBJECT operator()(const std::vector<int>& values) noexcept {
+		return values;
+	}
+	OBJECT operator()(const std::vector<float>& values) noexcept {
+		return values;
+	}
+	OBJECT operator()(const std::vector<bool>& values) noexcept {
+		return values;
 	}
 	OBJECT operator()(const auto&) noexcept {
 		return invalid_state("make list is failed");
@@ -61,8 +70,8 @@ struct get_array_size {
 	}
 };
 
-struct make_insert_array {
-	make_insert_array(int index) :
+struct insert_to_array {
+	insert_to_array(int index) :
 		index(index)
 	{}
 

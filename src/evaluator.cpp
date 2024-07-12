@@ -317,7 +317,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 				con.abort();
 			} if (size > init_value_size) {
 				for (int i = init_value_size; i < size; ++i) {
-					std::visit(make_insert_array(-1), con.stack.back());
+					std::visit(insert_to_array(-1), con.stack.back());
 				}
 			}
 			con.var_table.insert({ encoded_name, context::var_info {.modifier = modifier, .type = type, .value = con.stack.back() } });
@@ -431,14 +431,14 @@ std::optional<invalid_state> ast_node_initial_list::evaluate(context& con) {
 			con.return_code = value->evaluate(con);
 			int current_type = con.stack.back().index();
 			if (!type_index) {
-				object = std::visit(make_as_array {}, con.stack.back());
+				object = std::visit(make_array {}, con.stack.back());
 				con.stack.pop_back();
 			} else if (type_index != current_type) {
 				std::cout << "runtime error (" << point.line << ", " << point.col << "): different type is found in the initialize list (index: " << count << ")" << std::endl;
 				con.return_code = invalid_state("different type is found in the initialize list");
 				con.abort();
 			} else {
-				std::visit(make_insert_array(-1), object, con.stack.back());
+				std::visit(insert_to_array(-1), object, con.stack.back());
 				con.stack.pop_back();
 			}
 			type_index = current_type;
