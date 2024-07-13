@@ -42,7 +42,7 @@ public:
 
 	virtual const ast_base_tag* get_tag() const { return &ast_node_error::tag; }
 	virtual std::string log(std::string indent) {
-		return indent + "<error>" + text + "</error>\n";
+		return indent + "<error code_point=(" + std::to_string(point.line) + "," + std::to_string(point.col) + ")>" + text + "</error>\n";
 	}
 	virtual std::optional<invalid_state> evaluate(context& con);
 	std::string text;
@@ -552,6 +552,8 @@ public:
 };
 
 class parser {
+private:
+	static void skip_until_semicolon(std::vector<lexer::token>::const_iterator& itr);
 public:
 	static std::unique_ptr<ast_node_base> try_build_value(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_call_function(context& con, std::vector<lexer::token>::const_iterator& itr);
