@@ -12,8 +12,9 @@ fn main() -> int {
 	const test : bool = false;
 	mut arr: int[3] = { 100, 200, 300 };
 	mut arr2: int[3] = { 100, 200 };
-	const tmp: str = "Hello World";
-	return tmp + "!!";
+	mut tmp: str = "Hello World";
+	tmp = tmp + "!!";
+	return tmp;
 	arr[2] = 10;
 	/*
 	if (test) {

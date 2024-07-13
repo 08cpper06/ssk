@@ -472,7 +472,7 @@ struct operate_sub_object {
 		return lhs[lhs_index] - rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to substrate operation");
 	}
 
@@ -560,7 +560,7 @@ struct operate_mul_object {
 		return lhs[lhs_index] * rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to multiply operation");
 	}
 
@@ -660,7 +660,7 @@ struct operate_div_object {
 		return lhs[lhs_index] / rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to divide operation");
 	}
 
@@ -766,7 +766,7 @@ struct operate_equal_object {
 		return lhs[lhs_index] == rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to equality operation");
 	}
 
@@ -872,7 +872,7 @@ struct operate_not_object {
 		return lhs[lhs_index] != rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to not equality operation");
 	}
 
@@ -978,7 +978,7 @@ struct operate_less_than_object {
 		return lhs[lhs_index] < rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to less than operation");
 	}
 
@@ -1084,7 +1084,7 @@ struct operate_less_than_or_equal_object {
 		return lhs[lhs_index] <= rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to less than or equal operation");
 	}
 
@@ -1190,7 +1190,7 @@ struct operate_greater_than_object {
 		return lhs[lhs_index] > rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to greater than operation");
 	}
 
@@ -1296,7 +1296,7 @@ struct operate_greater_than_or_equal_object {
 		return lhs[lhs_index] >= rhs[rhs_index];
 	}
 
-	OBJECT operator()(auto&, auto&) noexcept {
+	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to greater than or equal operation");
 	}
 
