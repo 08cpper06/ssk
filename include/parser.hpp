@@ -48,6 +48,26 @@ public:
 	std::string text;
 };
 
+class ast_node_string : public ast_node_base {
+public:
+	struct ast_string_tag : public ast_base_tag {};
+	inline static constexpr ast_string_tag tag;
+public:
+	ast_node_string(const lexer::token& value, code_point point) :
+		value(value)
+	{
+		this->point = point;
+	}
+	virtual ~ast_node_string() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_string::tag; }
+	virtual std::string log(std::string indent) {
+		return indent + "<value>" + value.raw + "</value>\n";
+	}
+	virtual std::optional<invalid_state> evaluate(context& con);
+	lexer::token value;
+};
+
 class ast_node_value : public ast_node_base {
 public:
 	struct ast_value_tag : public ast_base_tag {};

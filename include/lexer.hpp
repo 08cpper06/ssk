@@ -28,6 +28,8 @@ public:
 
 		underbar,
 
+		string,
+
 		_const,
 		_mut,
 
@@ -40,6 +42,7 @@ public:
 		_int,
 		_float,
 		_bool,
+		_str,
 
 		_true,
 		_false,
@@ -67,6 +70,7 @@ public:
 	static std::optional<token> try_parse_number(context& con) noexcept;
 	static std::optional<token> try_parse_sign_and_keyword(context& con) noexcept;
 	static std::optional<token> try_parse_identifier(context& con) noexcept;
+	static std::optional<token> try_parse_string(context& con) noexcept;
 public:
 	static std::vector<token> tokenize(const std::string& source) noexcept;
 };

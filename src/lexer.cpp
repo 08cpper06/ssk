@@ -53,6 +53,7 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = "int", .type = lexer::token_type::_int },
 		{ .str = "float", .type = lexer::token_type::_float },
 		{ .str = "bool", .type = lexer::token_type::_bool },
+		{ .str = "str", .type = lexer::token_type::_str },
 		{ .str = "true", .type = lexer::token_type::_true },
 		{ .str = "false", .type = lexer::token_type::_false },
 		{ .str = "const", .type = lexer::token_type::_const },
@@ -121,6 +122,27 @@ std::optional<lexer::token> lexer::try_parse_identifier(lexer::context& con) noe
 	return token { .raw = str, .type = lexer::token_type::identifier, .point = con.point };
 }
 
+std::optional<lexer::token> lexer::try_parse_string(context& con) noexcept {
+	if (*con.itr != '\"') {
+		return std::nullopt;
+	}
+	code_point point = con.point;
+	++con.itr;
+	std::string str;
+	while (con.itr != con.end) {
+		if (*con.itr == '\"') {
+			++con.itr;
+			break;
+		}
+		str += *con.itr;
+		++con.itr;
+	}
+	if (con.itr == con.end) {
+		return std::nullopt;
+	}
+	return token { .raw = str, .type = lexer::token_type::string, .point = point };
+}
+
 std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 	lexer::context con { .point = { .line = 1, .col = 0 }, .itr = source.begin(), .end = source.end() };
 	std::vector<token> toks;
@@ -135,6 +157,10 @@ std::vector<lexer::token> lexer::tokenize(const std::string& source) noexcept {
 		}
 		if (std::optional<token> identifier = try_parse_identifier(con)) {
 			toks.push_back(identifier.value());
+			continue;
+		}
+		if (std::optional<token> string_tok = try_parse_string(con)) {
+			toks.push_back(string_tok.value());
 			continue;
 		}
 		if (std::isspace(*con.itr)) {

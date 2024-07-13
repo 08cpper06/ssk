@@ -2,12 +2,16 @@
 #include <iostream>
 #include <cassert>
 
+
 std::unique_ptr<ast_node_base> parser::try_build_value(context& con, std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->type == lexer::token_type::identifier && (itr + 1)->raw == "(") {
 		return try_build_call_function(con, itr);
 	}
 	if (itr->type == lexer::token_type::identifier && (itr + 1)->raw == "[") {
 		return try_build_reference_array(con, itr);
+	}
+	if (itr->type == lexer::token_type::string) {
+		return std::make_unique<ast_node_string>(*itr++, itr->point);
 	}
 	if (itr->type != lexer::token_type::number &&
 		itr->type != lexer::token_type::_true &&
@@ -46,7 +50,7 @@ std::unique_ptr<ast_node_base> parser::try_build_timedivide_node(context& con, s
 
 std::unique_ptr<ast_node_base> parser::try_build_plusminus_node(context& con, std::vector<lexer::token>::const_iterator& itr) {
 	std::unique_ptr<ast_node_base> lhs = try_build_timedivide_node(con, itr);
-	if (!lhs || !is_a<ast_node_value>(lhs.get())) {
+	if (!lhs || (!is_a<ast_node_value>(lhs.get()) && !is_a<ast_node_string>(lhs.get()))) {
 		return lhs;
 	}
 
@@ -243,6 +247,7 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	case lexer::token_type::_int: break;
 	case lexer::token_type::_float: break;
 	case lexer::token_type::_bool: break;
+	case lexer::token_type::_str: break;
 	default:
 		itr = tmp;
 		std::cout << "invalid type (" << tmp->raw << ")" << std::endl;

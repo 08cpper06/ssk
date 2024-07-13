@@ -49,6 +49,12 @@ std::optional<invalid_state> ast_node_error::evaluate(context& con) {
 	return invalid_state(text);
 }
 
+std::optional<invalid_state> ast_node_string::evaluate(context& con) {
+	con.stack.push_back(value.raw);
+	con.return_code = std::nullopt;
+	return con.return_code;
+}
+
 std::optional<invalid_state> ast_node_value::evaluate(context& con) {
 	if (value.type == lexer::token_type::identifier) {
 		std::map<std::string, context::var_info>::const_iterator itr = find_var(con, value.raw);
@@ -360,6 +366,14 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 			value = std::vector<bool>(size, false);
 		} else {
 			value = false;
+		}
+		break;
+	}
+	case lexer::token_type::_str: {
+		if (size >= 0) {
+			value = std::vector<std::string>(size, "");
+		} else {
+			value = "";
 		}
 		break;
 	}
