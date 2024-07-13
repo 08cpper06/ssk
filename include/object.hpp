@@ -16,9 +16,25 @@ inline static constexpr size_t int_array_index = OBJECT(std::vector<int>()).inde
 inline static constexpr size_t float_array_index = OBJECT(std::vector<float>()).index();
 inline static constexpr size_t string_array_index = OBJECT(std::vector<std::string>()).index();
 
+inline static std::string type_names[] = {
+	"invalid_state", "bool", "int", "float", "string",
+	"bool[]", "int[]", "float[]", "string[]"
+};
+
+
 struct get_object_type_name {
-	std::string operator()(const auto& value) noexcept {
-		return typeid(decltype(value)).name();
+	std::string operator()(bool value) noexcept { return "bool"; }
+	std::string operator()(int value) noexcept { return "int"; }
+	std::string operator()(float value) noexcept { return "float"; }
+	std::string operator()(const std::string& value) noexcept { return "str"; }
+
+	std::string operator()(const std::vector<bool>& value) noexcept { return "bool[]"; }
+	std::string operator()(const std::vector<int>& value) noexcept { return "int[]"; }
+	std::string operator()(const std::vector<float>& value) noexcept { return "float[]"; }
+	std::string operator()(const std::vector<std::string>& value) noexcept { return "str[]"; }
+
+	std::string operator()(auto value) noexcept {
+		return "invalid_state";
 	}
 };
 
@@ -32,6 +48,9 @@ struct make_array {
 	OBJECT operator()(bool value) noexcept {
 		return std::vector<bool>({ value });
 	}
+	OBJECT operator()(const std::string& value) noexcept {
+		return std::vector<std::string>({ value });
+	}
 	OBJECT operator()(const std::vector<int>& values) noexcept {
 		return values;
 	}
@@ -39,6 +58,9 @@ struct make_array {
 		return values;
 	}
 	OBJECT operator()(const std::vector<bool>& values) noexcept {
+		return values;
+	}
+	OBJECT operator()(const std::vector<std::string>& values) noexcept {
 		return values;
 	}
 	OBJECT operator()(const auto&) noexcept {
@@ -56,6 +78,9 @@ struct get_array_size {
 	int operator()(bool value) noexcept {
 		return 1;
 	}
+	int operator()(const std::string& value) noexcept {
+		return 1;
+	}
 
 	int operator()(const std::vector<int>& values) noexcept {
 		return values.size();
@@ -66,8 +91,11 @@ struct get_array_size {
 	int operator()(const std::vector<bool>& values) noexcept {
 		return values.size();
 	}
+	int operator()(const std::vector<std::string>& values) noexcept {
+		return values.size();
+	}
 
-	int operator()(const auto&) {
+	int operator()(auto) {
 		return -1;
 	}
 };
@@ -101,6 +129,14 @@ struct insert_to_array {
 		}
 		return std::nullopt;
 	}
+	std::optional<invalid_state> operator()(std::vector<std::string>& values, const std::string& value) noexcept {
+		if (index < 0) {
+			values.insert(values.begin() + (values.size() + index + 1), value);
+		} else {
+			values.insert(values.begin() + index, value);
+		}
+		return std::nullopt;
+	}
 
 	std::optional<invalid_state> operator()(std::vector<int>& values) noexcept {
 		if (index < 0) {
@@ -125,6 +161,15 @@ struct insert_to_array {
 		}
 		else {
 			values.insert(values.begin() + index, bool());
+		}
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(std::vector<std::string>& values) noexcept {
+		if (index < 0) {
+			values.insert(values.begin() + (values.size() + index + 1), std::string());
+		}
+		else {
+			values.insert(values.begin() + index, std::string());
 		}
 		return std::nullopt;
 	}
@@ -169,6 +214,38 @@ struct get_object_as_string {
 	}
 	std::string operator()(const std::string& value) noexcept {
 		return value;
+	}
+	std::string operator()(const std::vector<bool>& values) {
+		std::string str = "[";
+		char sep = '\0';
+		for (const bool& value : values) {
+			str += std::exchange(sep, ',') + value;
+		}
+		return str + "]";
+	}
+	std::string operator()(const std::vector<int>& values) {
+		std::string str = "[";
+		char sep = '\0';
+		for (const int& value : values) {
+			str += std::exchange(sep, ',') + value;
+		}
+		return str + "]";
+	}
+	std::string operator()(const std::vector<float>& values) {
+		std::string str = "[";
+		char sep = '\0';
+		for (const float& value : values) {
+			str += std::exchange(sep, ',') + value;
+		}
+		return str + "]";
+	}
+	std::string operator()(const std::vector<std::string>& values) {
+		std::string str = "[";
+		std::string sep = "";
+		for (const std::string& value : values) {
+			str += std::exchange(sep, '\",') + "\"" + value + "\"";
+		}
+		return str + "]";
 	}
 	std::string operator()(const auto& value) noexcept {
 		return "invalid state (get_object_as_string)";

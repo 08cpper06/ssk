@@ -37,8 +37,10 @@ int main(int argc, const char* argv[]) {
 	std::cout << "==============" << std::endl;
 	runtime::evaluate_pre_process(con);
 	con.func_table["main"].block->evaluate(con);
-	OBJECT return_code = con.stack.back();
-	std::cout << "return code: " << std::visit(get_object_as_string {}, return_code) << std::endl;
+	if (con.stack.size()) {
+		OBJECT return_code = con.stack.back();
+		std::cout << "return code: " << std::visit(get_object_as_string {}, return_code) << std::endl;
+	}
 
 	return 0;
 }

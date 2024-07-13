@@ -65,6 +65,7 @@ private:
 	struct keyword_info {
 		std::string str;
 		lexer::token_type type;
+		bool is_keyword;
 	};
 public:
 	static std::optional<token> try_parse_number(context& con) noexcept;

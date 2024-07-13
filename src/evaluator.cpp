@@ -444,7 +444,7 @@ std::optional<invalid_state> ast_node_initial_list::evaluate(context& con) {
 			std::cout << "runtime error (" << point.line << ", " << point.col << "): " << error->text << std::endl;
 			con.return_code = invalid_state("invalid token in the initialize list");
 			con.abort();
-		} else if (is_a<ast_node_value>(ptr.get())) {
+		} else if (is_a<ast_node_value>(ptr.get()) || is_a<ast_node_string>(ptr.get())) {
 			ast_node_value* value = static_cast<ast_node_value*>(ptr.get());
 			con.return_code = value->evaluate(con);
 			int current_type = con.stack.back().index();

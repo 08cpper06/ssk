@@ -13,6 +13,7 @@ fn main() -> int {
 	mut arr: int[3] = { 100, 200, 300 };
 	mut arr2: int[3] = { 100, 200 };
 	mut tmp: str = "Hello World";
+	mut tmp2: str[] = { "Hello World", "Test" };
 	tmp = tmp + "!!";
 	return tmp;
 	arr[2] = 10;
