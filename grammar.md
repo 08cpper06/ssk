@@ -116,6 +116,7 @@
 &emsp;int<br>
 &emsp;float<br>
 &emsp;bool<br>
+&emsp;str<br>
 
 ## Expression
 <b>*expression*</b>:<br>
@@ -154,3 +155,4 @@
 &emsp;<b>*number*</b> .<br>
 &emsp;true<br>
 &emsp;false<br>
+&emsp;" <b>*any_unicode_charactors*</b> "<br>
