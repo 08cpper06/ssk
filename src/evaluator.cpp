@@ -117,14 +117,17 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 	con.return_code = itr->second.block->evaluate(con);
 	con.is_abort = false;
 
-	if (con.stack.back().index() == bool_index && itr->second.type != lexer::token_type::_bool) {
-		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected bool value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
+	if (itr->second.type == context::var_type::_bool && con.stack.back().index() != bool_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected bool value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (con.stack.back().index() == int_index && itr->second.type != lexer::token_type::_int) {
-		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected int value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
+	} else if (itr->second.type == context::var_type::_int && con.stack.back().index() != int_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected int value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (con.stack.back().index() == float_index && itr->second.type != lexer::token_type::_float) {
-		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected float value as return value (" << std::visit(get_object_type_name {}, con.stack.back()) << ")" << std::endl;
+	} else if (itr->second.type == context::var_type::_float && con.stack.back().index() != float_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected float value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
+		con.abort();
+	} else if (itr->second.type == context::var_type::_str && con.stack.back().index() != string_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected str value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
 	}
 
@@ -288,7 +291,7 @@ std::optional<invalid_state> ast_node_function::evaluate(context& con) {
 	for (const context::var_info& arg : arguments) {
 		info.arguments.push_back(context::func_info::arg_info { .name = arg.name, .modifier = arg.modifier, .type = arg.type });
 	}
-	info.type = return_type;
+	info.type = context::cast_from_token(return_type, return_type_size >= 0);
 	info.block = block.get();
 	con.func_table.insert({ function_name, std::move(info) });
 	con.return_code = std::nullopt;
@@ -335,6 +338,19 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 					std::visit(insert_to_array(-1), con.stack.back());
 				}
 			}
+			if (type == context::var_type::_bool && con.stack.back().index() != bool_index) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not bool (" << name << ")" << std::endl;
+				con.abort();
+			} else if (type == context::var_type::_int && con.stack.back().index() != int_index) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not int (" << name << ")" << std::endl;
+				con.abort();
+			} else if (type == context::var_type::_float && con.stack.back().index() != float_index) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
+				con.abort();
+			} else if (type == context::var_type::_str && con.stack.back().index() != string_index) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not str (" << name << ")" << std::endl;
+				con.abort();
+			}
 			con.var_table.insert({ encoded_name, context::var_info {.modifier = modifier, .type = type, .value = con.stack.back() } });
 			con.stack.pop_back();
 		} else {
@@ -346,6 +362,9 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 				con.abort();
 			} else if (type == context::var_type::_float && con.stack.back().index() != float_index) {
 				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
+				con.abort();
+			} else if (type == context::var_type::_str && con.stack.back().index() != string_index) {
+				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not str (" << name << ")" << std::endl;
 				con.abort();
 			}
 			con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = con.stack.back() }});

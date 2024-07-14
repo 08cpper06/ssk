@@ -305,7 +305,7 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 			return std::make_unique<ast_node_error>("dimension should be integer", point);
 		}
 
-		return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, context::cast_from_token(type), size, point);
+		return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, context::cast_from_token(type, size >= 0), size, point);
 	}
 
 	if (tmp->raw != "=") {
@@ -367,7 +367,7 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	if (var_name_token.type != lexer::token_type::identifier) {
 		return std::make_unique<ast_node_error>("expected identifier", point);
 	}
-	return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, context::cast_from_token(type), size, std::move(init_value), point);
+	return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, context::cast_from_token(type, size >= 0), size, std::move(init_value), point);
 }
 
 std::unique_ptr<ast_node_base> parser::try_build_initial_list(context& con, std::vector<lexer::token>::const_iterator& itr) {
@@ -604,6 +604,17 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 		casted_block->block_name = func_name_token.raw;
 	}
 
+	int return_type_size = -1;
+	if (itr->raw == "[") {
+		++itr;
+		if (itr->raw == "]") {
+			return_type_size = 0;
+			++itr;
+		} else {
+			return std::make_unique<ast_node_error>("return type dimension is empty", itr->point);
+		}
+	}
+
 	switch (return_type_token.type) {
 	case lexer::token_type::_int: break;
 	case lexer::token_type::_float: break;
@@ -620,6 +631,7 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 	std::unique_ptr<ast_node_function> func = std::make_unique<ast_node_function>();
 	func->block = std::move(block);
 	func->return_type = return_type_token.type;
+	func->return_type_size = return_type_size;
 	func->function_name = func_name_token.raw;
 	func->point = point;
 	func->arguments = std::move(args);

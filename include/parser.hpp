@@ -294,6 +294,7 @@ public:
 	std::vector<context::var_info> arguments;
 
 	lexer::token_type return_type;
+	int return_type_size;
 };
 
 class ast_node_array_refernce : public ast_node_base {

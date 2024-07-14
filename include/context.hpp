@@ -36,17 +36,33 @@ struct context {
 			var_type type;
 		};
 		std::vector<arg_info> arguments;
-		lexer::token_type type;
+		var_type type;
 
 		ast_node_base* block;
 	};
 
-	static var_type cast_from_token(lexer::token_type type) {
+	static var_type cast_from_token(lexer::token_type type, bool is_array) {
 		switch (type) {
-		case lexer::token_type::_int: return var_type::_int;
-		case lexer::token_type::_bool: return var_type::_bool;
-		case lexer::token_type::_float: return var_type::_float;
-		case lexer::token_type::_str: return var_type::_str;
+		case lexer::token_type::_int:
+			if (is_array) {
+				return var_type::_int_array;
+			}
+			return var_type::_int;
+		case lexer::token_type::_bool:
+			if (is_array) {
+				return var_type::_bool_array;
+			}
+			return var_type::_bool;
+		case lexer::token_type::_float:
+			if (is_array) {
+				return var_type::_float_array;
+			}
+			return var_type::_float;
+		case lexer::token_type::_str:
+			if (is_array) {
+				return var_type::_str_array;
+			}
+			return var_type::_str;
 		default:
 			return var_type::_invalid;
 		}
