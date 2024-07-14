@@ -250,7 +250,8 @@ public:
 		block(nullptr),
 		function_name(),
 		arguments({}),
-		return_type(context::var_type::_invalid)
+		return_type(context::var_type::_invalid),
+		return_type_size(-1)
 	{}
 	virtual ~ast_node_function() = default;
 
@@ -280,6 +281,11 @@ public:
 			case context::var_type::_int: ret += " int"; break;
 			case context::var_type::_float: ret += " float"; break;
 			case context::var_type::_bool: ret += " bool"; break;
+			case context::var_type::_str: ret += " str"; break;
+			case context::var_type::_int_array: ret += " int[]"; break;
+			case context::var_type::_float_array: ret += " float[]"; break;
+			case context::var_type::_bool_array: ret += " bool[]"; break;
+			case context::var_type::_str_array: ret += " str[]"; break;
 			}
 			ret += "\">" + arg.name + "</argument>\n";
 		}

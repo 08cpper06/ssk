@@ -572,19 +572,61 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 
 			switch (itr->type) {
 			case lexer::token_type::_int:
+				++itr;
 				var.type = context::var_type::_int;
+				if (itr->raw == "[") {
+					var.type = context::var_type::_int_array;
+					++itr;
+					if (itr->raw != "]") {
+						var.type = context::var_type::_invalid;
+					} else {
+						++itr;
+					}
+				}
 				break;
 			case lexer::token_type::_float:
+				++itr;
 				var.type = context::var_type::_float;
+				if (itr->raw == "[") {
+					var.type = context::var_type::_float_array;
+					++itr;
+					if (itr->raw != "]") {
+						var.type = context::var_type::_invalid;
+					} else {
+						++itr;
+					}
+				}
 				break;
 			case lexer::token_type::_bool:
+				++itr;
 				var.type = context::var_type::_bool;
+				if (itr->raw == "[") {
+					var.type = context::var_type::_bool_array;
+					if (itr->raw != "]") {
+						var.type = context::var_type::_invalid;
+					} else {
+						++itr;
+					}
+				}
+				break;
+			case lexer::token_type::_str:
+				++itr;
+				var.type = context::var_type::_str;
+				if (itr->raw == "[") {
+					var.type = context::var_type::_str_array;
+					if (itr->raw != "]") {
+						var.type = context::var_type::_invalid;
+					}
+					else {
+						++itr;
+					}
+				}
 				break;
 			default:
 				std::cout << "invalid type (" << itr->raw << ")" << std::endl;
-				return std::make_unique<ast_node_error>("expeceted type (" + itr->raw + ")", point);
+				return std::make_unique<ast_node_error>("invalid type (" + itr->raw + ")", point);
 			}
-			++itr;
+
 			args.push_back(var);
 
 			if (itr->raw == ")") {

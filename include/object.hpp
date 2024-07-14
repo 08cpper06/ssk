@@ -277,28 +277,28 @@ struct operate_assign_object {
 
 	OBJECT operator()(std::vector<float>& lhs, int rhs) {
 		if (index < 0 || index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		lhs[index] = static_cast<float>(rhs);
 		return lhs[index];
 	}
 	OBJECT operator()(std::vector<float>& lhs, float rhs) {
 		if (index < 0 || index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		lhs[index] = rhs;
 		return lhs[index];
 	}
 	OBJECT operator()(std::vector<int>& lhs, int rhs) {
 		if (index < 0 || index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		lhs[index] = rhs;
 		return lhs[index];
 	}
 	OBJECT operator()(std::vector<int>& lhs, float rhs) {
 		if (index < 0 || index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		lhs[index] = static_cast<int>(rhs);
 		return lhs[index];
@@ -306,7 +306,7 @@ struct operate_assign_object {
 
 	OBJECT operator()(std::vector<std::string>& lhs, std::string& rhs) {
 		if (index < 0 || index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		lhs[index] = rhs;
 		return lhs[index];
@@ -334,29 +334,29 @@ struct operate_index_ref_object {
 
 	OBJECT operator()(std::vector<float>& value) {
 		if (index < 0 || index >= value.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(value.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(value.size()) + ")");
 		}
 		return float(value[index]);
 	}
 	OBJECT operator()(std::vector<int>& value) {
 		if (index < 0 || index >= value.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(value.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(value.size()) + ")");
 		}
 		return int(value[index]);
 	}
 	OBJECT operator()(std::vector<bool>& value) {
 		if (index < 0 || index >= value.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(value.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(value.size()) + ")");
 		}
 		return bool(value[index]);
 	}
 	OBJECT operator()(std::vector<std::string>& value) {
 		if (index < 0 || index >= value.size()) {
-			return invalid_state("out of range (" + std::to_string(index) + ", " + std::to_string(value.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(index) + ", size: " + std::to_string(value.size()) + ")");
 		}
 		return value[index];
 	}
-	OBJECT operator()(auto&) {
+	OBJECT operator()(auto) {
 		return invalid_state("failed to refer array (index: " + std::to_string(index) + ")");
 	}
 
@@ -386,77 +386,77 @@ struct operate_add_object {
 	}
 	OBJECT operator()(const std::vector<int>& lhs, const std::vector<int>& rhs) {
 		if (lhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (rhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (lhs_index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		if (rhs_index >= rhs.size()) {
-			return invalid_state("out of range (" + std::to_string(rhs_index) + ", " + std::to_string(rhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(rhs_index) + ", size: " + std::to_string(rhs.size()) + ")");
 		}
 		return lhs[lhs_index] + rhs[rhs_index];
 	}
 	OBJECT operator()(const std::vector<int>& lhs, const std::vector<float>& rhs) {
 		if (lhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (rhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (lhs_index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		if (rhs_index >= rhs.size()) {
-			return invalid_state("out of range (" + std::to_string(rhs_index) + ", " + std::to_string(rhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(rhs_index) + ", size: " + std::to_string(rhs.size()) + ")");
 		}
 		return lhs[lhs_index] + static_cast<int>(rhs[rhs_index]);
 	}
 	OBJECT operator()(const std::vector<float>& lhs, const std::vector<int>& rhs) {
 		if (lhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (rhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (lhs_index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		if (rhs_index >= rhs.size()) {
-			return invalid_state("out of range (" + std::to_string(rhs_index) + ", " + std::to_string(rhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(rhs_index) + ", size: " + std::to_string(rhs.size()) + ")");
 		}
 		return static_cast<int>(lhs[lhs_index]) + rhs[rhs_index];
 	}
 	OBJECT operator()(const std::vector<float>& lhs, const std::vector<float>& rhs) {
 		if (lhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (rhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (lhs_index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		if (rhs_index >= rhs.size()) {
-			return invalid_state("out of range (" + std::to_string(rhs_index) + ", " + std::to_string(rhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(rhs_index) + ", size: " + std::to_string(rhs.size()) + ")");
 		}
 		return lhs[lhs_index] + rhs[rhs_index];
 	}
 
 	OBJECT operator()(const std::vector<std::string>& lhs, const std::vector<std::string>& rhs) {
 		if (lhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (rhs_index < 0) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
 		if (lhs_index >= lhs.size()) {
-			return invalid_state("out of range (" + std::to_string(lhs_index) + ", " + std::to_string(lhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ", size: " + std::to_string(lhs.size()) + ")");
 		}
 		if (rhs_index >= rhs.size()) {
-			return invalid_state("out of range (" + std::to_string(rhs_index) + ", " + std::to_string(rhs.size()) + ")");
+			return invalid_state("out of range (access: " + std::to_string(rhs_index) + ", size: " + std::to_string(rhs.size()) + ")");
 		}
 		return lhs[lhs_index] + rhs[rhs_index];
 	}

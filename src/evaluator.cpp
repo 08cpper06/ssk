@@ -168,6 +168,10 @@ std::optional<invalid_state> ast_node_array_refernce::evaluate(context& con) {
 	}
 
 	OBJECT value = std::visit(operate_index_ref_object(std::get<int>(obj_index)), itr->second.value);
+	if (value.index() == state_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): " << std::get<invalid_state>(value).message << std::endl;
+		con.abort();
+	}
 	con.stack.push_back(std::move(value));
 	return con.return_code;
 }
