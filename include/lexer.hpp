@@ -19,6 +19,7 @@ public:
 		semicolon,
 		comma,
 		arrow,
+		repeat,
 
 		comment_begin,
 		comment_end,

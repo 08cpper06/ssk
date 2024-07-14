@@ -9,8 +9,7 @@ std::optional<lexer::token> lexer::try_parse_number(lexer::context& con) noexcep
 	while (*con.itr) {
 		if (*con.itr >= '0' && *con.itr <= '9') {
 			tok += *con.itr;
-		}
-		else if (!has_point && *con.itr == '.') {
+		} else if (!has_point && *con.itr == '.' && *(con.itr + 1) != '.') {
 			tok += *con.itr;
 			has_point = true;
 		}
@@ -49,6 +48,7 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = "*/", .type = lexer::token_type::comment_end, .is_keyword = false },
 		{ .str = "//", .type = lexer::token_type::comment_line, .is_keyword = false },
 		{ .str = "->", .type = lexer::token_type::arrow, .is_keyword = false },
+		{ .str = "...", .type = lexer::token_type::repeat, .is_keyword = false },
 		{ .str = "return", .type = lexer::token_type::_return, .is_keyword = true },
 		{ .str = "int", .type = lexer::token_type::_int, .is_keyword = true },
 		{ .str = "float", .type = lexer::token_type::_float, .is_keyword = true },

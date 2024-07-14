@@ -378,6 +378,23 @@ struct operate_index_ref_object {
 	int index;
 };
 
+struct operate_repeat_object {
+	OBJECT operator()(int bgn, int end) noexcept {
+		std::vector<int> list;
+		list.reserve(std::abs(end - bgn));
+		int inc = end > bgn ? 1 : -1;
+		for (int i = bgn; i != end; i += inc) {
+			list.push_back(i);
+		}
+		list.push_back(end);
+		return list;
+	}
+
+	OBJECT operator()(auto, auto) noexcept {
+		return invalid_state("failed to evaluate repeat expression");
+	}
+};
+
 struct operate_add_object {
 	operate_add_object(int lhs_index, int rhs_index) :
 		lhs_index(lhs_index),

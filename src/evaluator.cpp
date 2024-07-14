@@ -149,6 +149,31 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 	return con.return_code;
 }
 
+std::optional<invalid_state> ast_node_repeat::evaluate(context& con) {
+	if (!bgn) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): repat expression start value is not found" << std::endl;
+		con.abort();
+	}
+	if (!end) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): repat expression end value is not found" << std::endl;
+		con.abort();
+	}
+	con.return_code = bgn->evaluate(con);
+	con.return_code = end->evaluate(con);
+	OBJECT end_value = con.stack.back(); con.stack.pop_back();
+	OBJECT bgn_value = con.stack.back(); con.stack.pop_back();
+
+	OBJECT list = std::visit(operate_repeat_object {}, bgn_value, end_value);
+	if (list.index() == state_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): " << std::get<invalid_state>(list).message << std::endl;
+		con.abort();
+	}
+
+	con.stack.push_back(std::move(list));
+	con.return_code = std::visit(get_object_return_code {}, con.stack.back());
+	return con.return_code;
+}
+
 std::optional<invalid_state> ast_node_array_refernce::evaluate(context& con) {
 	if (!index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): not found index" << std::endl;
@@ -334,7 +359,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 	if (init_value) {
 		con.return_code = init_value->evaluate(con);
 		if (size == 0) {
-			if (!is_a<ast_node_initial_list>(init_value.get())) {
+			if (!is_a<ast_node_initial_list>(init_value.get()) && !is_a<ast_node_repeat>(init_value.get())) {
 				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): array = `not initialize list`; " << std::endl;
 				con.abort();
 			}

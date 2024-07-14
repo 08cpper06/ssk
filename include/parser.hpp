@@ -309,6 +309,37 @@ public:
 	int return_type_size;
 };
 
+class ast_node_repeat : public ast_node_base {
+public:
+	struct ast_repeat_tag : public ast_base_tag {};
+	inline static constexpr ast_repeat_tag tag;
+public:
+	ast_node_repeat(std::unique_ptr<ast_node_base>&& bgn, std::unique_ptr<ast_node_base>&& end, code_point point) :
+		bgn(std::move(bgn)),
+		end(std::move(end))
+	{
+		this->point = point;
+	}
+
+	virtual ~ast_node_repeat() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_repeat::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = indent + "<repeat>\n";
+		if (bgn) {
+			ret += bgn->log(indent + "\t");
+		}
+		if (end) {
+			ret += end->log(indent + "\t");
+		}
+		return ret + indent + "<repeat>\n";
+	}
+	virtual std::optional<invalid_state> evaluate(context& con);
+
+	std::unique_ptr<ast_node_base> bgn;
+	std::unique_ptr<ast_node_base> end;
+};
+
 class ast_node_array_refernce : public ast_node_base {
 public:
 	struct ast_array_reference_tag : public ast_base_tag {};
@@ -564,6 +595,7 @@ private:
 	static void skip_until_semicolon(std::vector<lexer::token>::const_iterator& itr);
 public:
 	static std::unique_ptr<ast_node_base> try_build_value(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_build_repeat(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_call_function(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_reference_array(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_timedivide_node(context& con, std::vector<lexer::token>::const_iterator& itr);

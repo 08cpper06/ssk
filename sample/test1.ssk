@@ -1,9 +1,4 @@
-
-fn test(const one: int[], const two: int) -> int {
-	return one[two];
-}
-
 fn main() -> int {
-	mut tmp: str[2] = { "Hello World", "Test" };
-	return test({1400, 2100}, 1);
+	const test: int[] = 4...0;
+	return test;
 }
