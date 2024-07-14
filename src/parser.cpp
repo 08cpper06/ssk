@@ -535,6 +535,8 @@ std::unique_ptr<ast_node_base> parser::try_build_block(context& con, std::vector
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_var_definition(con, itr)) {
 			exprs.push_back(std::move(node));
+		} else if (node = try_build_function(con, itr)) {
+			exprs.push_back(std::make_unique<ast_node_error>("could not define function in the block", node->point));
 		} else if (isspace(itr->raw[0]) || itr->raw == ";") {
 			++itr;
 		} else {
