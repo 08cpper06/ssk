@@ -3,7 +3,7 @@ HelloWorld.
 
 # How to run
 ```
-./ssk ../sample.ssk
+./ssk ../sample/test1.ssk
 ```
 
 # Lexical conventions
