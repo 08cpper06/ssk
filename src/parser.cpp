@@ -602,6 +602,7 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 				var.type = context::var_type::_bool;
 				if (itr->raw == "[") {
 					var.type = context::var_type::_bool_array;
+					++itr;
 					if (itr->raw != "]") {
 						var.type = context::var_type::_invalid;
 					} else {
@@ -614,10 +615,10 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 				var.type = context::var_type::_str;
 				if (itr->raw == "[") {
 					var.type = context::var_type::_str_array;
+					++itr;
 					if (itr->raw != "]") {
 						var.type = context::var_type::_invalid;
-					}
-					else {
+					} else {
 						++itr;
 					}
 				}
