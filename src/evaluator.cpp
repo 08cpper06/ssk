@@ -372,6 +372,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 				con.abort();
 			}
 			con.var_table.insert({ encoded_name, context::var_info { .modifier = modifier, .type = type, .value = con.stack.back() }});
+			con.stack.pop_back();
 		} else if (size > 0) {
 			int init_value_size = std::visit(get_array_size {}, con.stack.back());
 			if (init_value_size < 0) {
