@@ -390,6 +390,22 @@ struct operate_repeat_object {
 		return list;
 	}
 
+	OBJECT operator()(const std::string& bgn, const std::string& end) noexcept {
+		if (bgn.size() != 1 || end.size() != 1) {
+			return invalid_state("failed to evaluate repeat expression (str should be a charactor)");
+		}
+		char bgn_c = bgn[0];
+		char end_c = end[0];
+		std::vector<std::string> list;
+		list.reserve(std::abs(end_c - bgn_c));
+		char inc = end > bgn ? 1 : -1;
+		for (char i = bgn_c; i != end_c; i += inc) {
+			list.push_back(i + std::string(""));
+		}
+		list.push_back(end_c + std::string(""));
+		return list;
+	}
+
 	OBJECT operator()(auto, auto) noexcept {
 		return invalid_state("failed to evaluate repeat expression");
 	}

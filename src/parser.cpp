@@ -352,8 +352,8 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	} else {
 		init_value = try_build_initial_list(con, tmp);
 		if (!init_value) {
-			init_value = try_build_repeat(con, tmp);
-			if (!init_value || !is_a<ast_node_repeat>(init_value.get())) {
+			init_value = try_build_expr(con, tmp);
+			if (!init_value && !is_a<ast_node_repeat>(init_value.get())) {
 				itr = tmp;
 				skip_until_semicolon(itr);
 				if (itr->type == lexer::token_type::semicolon) {
@@ -362,7 +362,7 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 				return std::make_unique<ast_node_error>("initial value is invalid", itr->point);
 			}
 		}
-		if (tmp->type != lexer::token_type::semicolon) {
+		if (!is_a<ast_node_expr>(init_value.get()) && tmp->type != lexer::token_type::semicolon) {
 			itr = tmp;
 			return std::make_unique<ast_node_error>("not found semicolon", itr->point);
 		}

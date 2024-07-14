@@ -359,7 +359,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 	if (init_value) {
 		con.return_code = init_value->evaluate(con);
 		if (size == 0) {
-			if (!is_a<ast_node_initial_list>(init_value.get()) && !is_a<ast_node_repeat>(init_value.get())) {
+			if (!is_a<ast_node_initial_list>(init_value.get()) && !is_a<ast_node_expr>(init_value.get())) {
 				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): array = `not initialize list`; " << std::endl;
 				con.abort();
 			}

@@ -1,4 +1,4 @@
 fn main() -> int {
-	const test: int[] = 4...0;
-	return test;
+	const test: str[] = "a"..."z" + "A"..."Z" + "_"..."_" + "0"..."9";
+	return 0...9 + 100...200;
 }
