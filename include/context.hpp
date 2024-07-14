@@ -36,7 +36,7 @@ struct context {
 			var_type type;
 		};
 		std::vector<arg_info> arguments;
-		var_type type;
+		var_type return_type;
 
 		ast_node_base* block;
 	};
@@ -80,4 +80,37 @@ struct context {
 	std::list<OBJECT> stack;
 
 	std::vector<ast_node_base*> pre_evaluate;
+};
+
+struct cast_var_type_object {
+	context::var_type operator()(int value) noexcept {
+		return context::var_type::_int;
+	}
+	context::var_type operator()(float value) noexcept {
+		return context::var_type::_float;
+	}
+	context::var_type operator()(bool value) noexcept {
+		return context::var_type::_bool;
+	}
+	context::var_type operator()(std::string& value) noexcept {
+		return context::var_type::_str;
+	}
+	context::var_type operator()(const std::vector<int>& value) noexcept {
+		return context::var_type::_int_array;
+	}
+	context::var_type operator()(const std::vector<float>& value) noexcept {
+		return context::var_type::_float_array;
+	}
+	context::var_type operator()(const std::vector<bool>& value) noexcept {
+		return context::var_type::_bool_array;
+	}
+	context::var_type operator()(const std::vector<std::string>& value) noexcept {
+		return context::var_type::_str_array;
+	}
+	context::var_type operator()(invalid_state) noexcept {
+		return context::var_type::_invalid;
+	}
+	context::var_type operator()(auto) noexcept {
+		return invalid_state("failed to cast as var_type");
+	}
 };

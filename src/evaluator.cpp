@@ -117,28 +117,28 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 	con.return_code = itr->second.block->evaluate(con);
 	con.is_abort = false;
 
-	if (itr->second.type == context::var_type::_bool && con.stack.back().index() != bool_index) {
+	if (itr->second.return_type == context::var_type::_bool && con.stack.back().index() != bool_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected bool value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (itr->second.type == context::var_type::_int && con.stack.back().index() != int_index) {
+	} else if (itr->second.return_type == context::var_type::_int && con.stack.back().index() != int_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected int value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (itr->second.type == context::var_type::_float && con.stack.back().index() != float_index) {
+	} else if (itr->second.return_type == context::var_type::_float && con.stack.back().index() != float_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected float value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (itr->second.type == context::var_type::_str && con.stack.back().index() != string_index) {
+	} else if (itr->second.return_type == context::var_type::_str && con.stack.back().index() != string_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected str value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (itr->second.type == context::var_type::_bool_array && con.stack.back().index() != bool_array_index) {
+	} else if (itr->second.return_type == context::var_type::_bool_array && con.stack.back().index() != bool_array_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected bool[] value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (itr->second.type == context::var_type::_int_array && con.stack.back().index() != int_array_index) {
+	} else if (itr->second.return_type == context::var_type::_int_array && con.stack.back().index() != int_array_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected int[] value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (itr->second.type == context::var_type::_float_array && con.stack.back().index() != float_array_index) {
+	} else if (itr->second.return_type == context::var_type::_float_array && con.stack.back().index() != float_array_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected float[] value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
-	} else if (itr->second.type == context::var_type::_str_array && con.stack.back().index() != string_array_index) {
+	} else if (itr->second.return_type == context::var_type::_str_array && con.stack.back().index() != string_array_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected str[] value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
 	}
@@ -332,7 +332,7 @@ std::optional<invalid_state> ast_node_function::evaluate(context& con) {
 	for (const context::var_info& arg : arguments) {
 		info.arguments.push_back(context::func_info::arg_info { .name = arg.name, .modifier = arg.modifier, .type = arg.type });
 	}
-	info.type = return_type;
+	info.return_type = return_type;
 	info.block = block.get();
 	con.func_table.insert({ function_name, std::move(info) });
 	con.return_code = std::nullopt;
@@ -344,6 +344,14 @@ std::optional<invalid_state> ast_node_block::evaluate(context& con) {
 		con.return_code = node->evaluate(con);
 		if (con.is_abort) {
 			break;
+		}
+	}
+	std::map<std::string, context::func_info>::const_iterator itr = con.func_table.find(block_name);
+	if (itr != con.func_table.end()) {
+		if (itr->second.return_type != std::visit(cast_var_type_object {}, con.stack.back())) {
+			std::cout << "runtime error (" << point.line << ", " << point.col << "): assign different type(expected: `" << type_names[static_cast<int>(itr->second.return_type)]
+				<< "`, actual: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
+			con.abort();
 		}
 	}
 	con.name_space.pop_back();
