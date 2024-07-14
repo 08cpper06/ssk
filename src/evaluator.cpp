@@ -107,6 +107,11 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 		++idx;
 		OBJECT value = con.stack.back();
 		con.stack.pop_back();
+		if (value.index() != static_cast<int>(info.type)) {
+			std::cout << "runtime error (" << point.line << ", " << point.col << "): expected `" << type_names[static_cast<int>(info.type)] << "` actual `" << std::visit(get_object_type_name{}, value) << "` at index: " << idx << std::endl;
+			con.abort();
+		}
+
 		con.var_table.insert({ encode(con, function_name) + "." + info.name, context::var_info {.modifier = info.modifier, .type = info.type, .value = value}});
 	}
 	con.return_code = itr->second.block->evaluate(con);
@@ -280,7 +285,7 @@ std::optional<invalid_state> ast_node_function::evaluate(context& con) {
 		con.abort();
 	}
 	context::func_info info;
-	for (const ast_node_function::var_type& arg : arguments) {
+	for (const context::var_info& arg : arguments) {
 		info.arguments.push_back(context::func_info::arg_info { .name = arg.name, .modifier = arg.modifier, .type = arg.type });
 	}
 	info.type = return_type;
@@ -333,13 +338,13 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 			con.var_table.insert({ encoded_name, context::var_info {.modifier = modifier, .type = type, .value = con.stack.back() } });
 			con.stack.pop_back();
 		} else {
-			if (type == lexer::token_type::_bool && con.stack.back().index() != bool_index) {
+			if (type == context::var_type::_bool && con.stack.back().index() != bool_index) {
 				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not bool (" << name << ")" << std::endl;
 				con.abort();
-			} else if (type == lexer::token_type::_int && con.stack.back().index() != int_index) {
+			} else if (type == context::var_type::_int && con.stack.back().index() != int_index) {
 				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not int (" << name << ")" << std::endl;
 				con.abort();
-			} else if (type == lexer::token_type::_float && con.stack.back().index() != float_index) {
+			} else if (type == context::var_type::_float && con.stack.back().index() != float_index) {
 				std::cout << "runtime error (" << init_value->point.line << ", " << init_value->point.col << "): initial value is not float (" << name << ")" << std::endl;
 				con.abort();
 			}
@@ -349,7 +354,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 		return con.return_code;
 	}
 	switch (type) {
-	case lexer::token_type::_int: {
+	case context::var_type::_int: {
 		if (size >= 0) {
 			value = std::vector<int>(size, 0);
 		} else {
@@ -357,7 +362,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 		}
 		break;
 	}
-	case lexer::token_type::_float: {
+	case context::var_type::_float: {
 		if (size >= 0) {
 			value = std::vector<float>(size, 0.f);
 		} else {
@@ -365,7 +370,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 		}
 		break;
 	}
-	case lexer::token_type::_bool: {
+	case context::var_type::_bool: {
 		if (size >= 0) {
 			value = std::vector<bool>(size, false);
 		} else {
@@ -373,7 +378,7 @@ std::optional<invalid_state> ast_node_var_definition::evaluate(context& con) {
 		}
 		break;
 	}
-	case lexer::token_type::_str: {
+	case context::var_type::_str: {
 		if (size >= 0) {
 			value = std::vector<std::string>(size, "");
 		} else {

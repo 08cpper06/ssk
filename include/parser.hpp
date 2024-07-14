@@ -242,12 +242,6 @@ public:
 
 class ast_node_function : public ast_node_base {
 public:
-	struct var_type {
-		lexer::token_type modifier;
-		lexer::token_type type;
-		std::string name;
-	};
-public:
 	struct ast_function_tag : public ast_base_tag {};
 	inline static constexpr ast_function_tag tag;
 
@@ -270,16 +264,16 @@ public:
 		case lexer::token_type::_bool: ret += "bool"; break;
 		}
 		ret += "\"></return>\n";
-		for (const var_type& arg : arguments) {
+		for (const context::var_info& arg : arguments) {
 			ret += indent + "\t<argument type=\"";
 			switch (arg.modifier) {
 			case lexer::token_type::_mut: ret += "mut"; break;
 			case lexer::token_type::_const: ret += "const"; break;
 			}
 			switch (arg.type) {
-			case lexer::token_type::_int: ret += " int"; break;
-			case lexer::token_type::_float: ret += " float"; break;
-			case lexer::token_type::_bool: ret += " bool"; break;
+			case context::var_type::_int: ret += " int"; break;
+			case context::var_type::_float: ret += " float"; break;
+			case context::var_type::_bool: ret += " bool"; break;
 			}
 			ret += "\">" + arg.name + "</argument>\n";
 		}
@@ -297,7 +291,7 @@ public:
 	std::unique_ptr<ast_node_base> block;
 	std::string function_name;
 
-	std::vector<var_type> arguments;
+	std::vector<context::var_info> arguments;
 
 	lexer::token_type return_type;
 };
@@ -339,7 +333,7 @@ public:
 	struct ast_var_definition_tag : public ast_base_tag {};
 	inline static constexpr ast_var_definition_tag tag;
 public:
-	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, int size, code_point point) :
+	ast_node_var_definition(lexer::token_type modifier, std::string name, context::var_type type, int size, code_point point) :
 		modifier(modifier),
 		name(name),
 		type(type),
@@ -347,7 +341,7 @@ public:
 	{
 		this->point = point;
 	}
-	ast_node_var_definition(lexer::token_type modifier, std::string name, lexer::token_type type, int size, std::unique_ptr<ast_node_base>&& init_value, code_point point) :
+	ast_node_var_definition(lexer::token_type modifier, std::string name, context::var_type type, int size, std::unique_ptr<ast_node_base>&& init_value, code_point point) :
 		modifier(modifier),
 		name(name),
 		type(type),
@@ -367,8 +361,8 @@ public:
 		case lexer::token_type::_const: ret += "const"; break;
 		}
 		switch (type) {
-		case lexer::token_type::_int: ret += " int"; break;
-		case lexer::token_type::_float: ret += " float"; break;
+		case context::var_type::_int: ret += " int"; break;
+		case context::var_type::_float: ret += " float"; break;
 		}
 		if (size > 0) {
 			ret += "[" + std::to_string(size)  + "]";
@@ -388,7 +382,7 @@ public:
 	virtual std::optional<invalid_state> evaluate(context& con);
 	lexer::token_type modifier;
 	std::string name;
-	lexer::token_type type;
+	context::var_type type;
 	std::unique_ptr<ast_node_base> init_value;
 	int size;
 };

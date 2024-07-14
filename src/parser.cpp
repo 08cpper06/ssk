@@ -6,7 +6,6 @@
 void parser::skip_until_semicolon(std::vector<lexer::token>::const_iterator& itr) {
 	while (itr->type != lexer::token_type::eof) {
 		if (itr->type == lexer::token_type::semicolon) {
-			++itr;
 			return;
 		}
 		++itr;
@@ -181,6 +180,7 @@ std::unique_ptr<ast_node_base> parser::try_build_call_function(context& con, std
 	while (itr->type != lexer::token_type::eof) {
 		node = try_build_assign(con, itr);
 		if (!node) {
+			skip_until_semicolon(itr);
 			node = std::make_unique<ast_node_error>("argument is invalid", point);
 		}
 		arguments.push_back(std::move(node));
@@ -188,11 +188,13 @@ std::unique_ptr<ast_node_base> parser::try_build_call_function(context& con, std
 			break;
 		}
 		if (itr->type != lexer::token_type::comma) {
+			skip_until_semicolon(itr);
 			return std::make_unique<ast_node_error>("not found `,`", point);
 		}
 		++itr;
 	}
 	if (itr->raw != ")") {
+		skip_until_semicolon(itr);
 		return std::make_unique<ast_node_error>("expected `)`", point);
 	}
 	++itr;
@@ -228,7 +230,7 @@ std::unique_ptr<ast_node_base> parser::try_build_return(context& con, std::vecto
 	std::unique_ptr<ast_node_base> node = try_build_expr(con, itr);
 	if (!node) {
 		skip_until_semicolon(itr);
-		if (itr->type != lexer::token_type::eof) {
+		if (itr->type == lexer::token_type::semicolon) {
 			++itr;
 		}
 	}
@@ -251,6 +253,9 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 		itr = tmp;
 		std::cout << "expected `:`" << std::endl;
 		skip_until_semicolon(itr);
+		if (itr->type == lexer::token_type::semicolon) {
+			++itr;
+		}
 		return std::make_unique<ast_node_error>("expected identifier", tmp->point);
 	}
 	++tmp;
@@ -280,6 +285,9 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 			itr = tmp;
 			std::cout << "expected `]`" << tmp->raw << ")" << std::endl;
 			skip_until_semicolon(itr);
+			if (itr->type == lexer::token_type::semicolon) {
+				++itr;
+			}
 			return std::make_unique<ast_node_error>("expected `]`", itr->point);
 		}
 		++tmp;
@@ -296,12 +304,16 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 		if (!is_integer_dim) {
 			return std::make_unique<ast_node_error>("dimension should be integer", point);
 		}
-		return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, type, size, point);
+
+		return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, context::cast_from_token(type), size, point);
 	}
 
 	if (tmp->raw != "=") {
 		itr = tmp;
 		skip_until_semicolon(itr);
+		if (itr->type == lexer::token_type::semicolon) {
+			++itr;
+		}
 		return std::make_unique<ast_node_error>("expected `=`", itr->point);
 	}
 	point = tmp->point;
@@ -312,6 +324,9 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 		if (!init_value) {
 			itr = tmp;
 			skip_until_semicolon(itr);
+			if (itr->type == lexer::token_type::semicolon) {
+				++itr;
+			}
 			return std::make_unique<ast_node_error>("initial value is invalid", itr->point);
 		}
 	} else {
@@ -319,6 +334,9 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 		if (!init_value) {
 			itr = tmp;
 			skip_until_semicolon(itr);
+			if (itr->type == lexer::token_type::semicolon) {
+				++itr;
+			}
 			return std::make_unique<ast_node_error>("initial value is invalid", itr->point);
 		}
 		if (tmp->type != lexer::token_type::semicolon) {
@@ -349,7 +367,7 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	if (var_name_token.type != lexer::token_type::identifier) {
 		return std::make_unique<ast_node_error>("expected identifier", point);
 	}
-	return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, type, size, std::move(init_value), point);
+	return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, context::cast_from_token(type), size, std::move(init_value), point);
 }
 
 std::unique_ptr<ast_node_base> parser::try_build_initial_list(context& con, std::vector<lexer::token>::const_iterator& itr) {
@@ -522,8 +540,8 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 		return std::make_unique<ast_node_error>("expeceted function name", itr->point);
 	}
 	++itr;
-	std::vector<ast_node_function::var_type> args;
-	ast_node_function::var_type var;
+	std::vector<context::var_info> args;
+	context::var_info var;
 	if (itr->raw != ")") {
 		while (itr->type == lexer::token_type::_const || itr->type == lexer::token_type::_mut) {
 			switch (itr->type) {
@@ -550,14 +568,19 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 			++itr;
 
 			switch (itr->type) {
-			case lexer::token_type::_int: break;
-			case lexer::token_type::_float: break;
-			case lexer::token_type::_bool: break;
+			case lexer::token_type::_int:
+				var.type = context::var_type::_int;
+				break;
+			case lexer::token_type::_float:
+				var.type = context::var_type::_float;
+				break;
+			case lexer::token_type::_bool:
+				var.type = context::var_type::_bool;
+				break;
 			default:
 				std::cout << "invalid type (" << itr->raw << ")" << std::endl;
 				return std::make_unique<ast_node_error>("expeceted type (" + itr->raw + ")", point);
 			}
-			var.type = itr->type;
 			++itr;
 			args.push_back(var);
 
