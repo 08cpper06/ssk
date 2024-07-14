@@ -515,10 +515,7 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 		return nullptr;
 	}
 	++itr;
-	if (itr->type != lexer::token_type::identifier) {
-		return std::make_unique<ast_node_error>("expeceted function name", itr->point);
-	}
-	std::string func_name = itr->raw;
+	lexer::token func_name_token = *itr;
 	code_point point = itr->point;
 	++itr;
 	if (itr->raw != "(") {
@@ -578,7 +575,13 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 		return std::make_unique<ast_node_error>("expeceted `->`", point);
 	}
 	++itr;
-	switch (itr->type) {
+	lexer::token return_type_token = *itr++;
+	std::unique_ptr<ast_node_base> block = try_build_block(con, itr);
+	if (ast_node_block* casted_block = dynamic_cast<ast_node_block*>(block.get())) {
+		casted_block->block_name = func_name_token.raw;
+	}
+
+	switch (return_type_token.type) {
 	case lexer::token_type::_int: break;
 	case lexer::token_type::_float: break;
 	case lexer::token_type::_bool: break;
@@ -586,17 +589,15 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 		std::cout << "invalid type (" << itr->raw << ")" << std::endl;
 		return std::make_unique<ast_node_error>("expeceted type (" + itr->raw + ")", point);
 	}
-	lexer::token_type return_type = itr->type;
-	++itr;
 
-	std::unique_ptr<ast_node_base> block = try_build_block(con, itr);
-	if (ast_node_block* casted_block = dynamic_cast<ast_node_block*>(block.get())) {
-		casted_block->block_name = func_name;
+	if (func_name_token.type != lexer::token_type::identifier) {
+		return std::make_unique<ast_node_error>("expeceted function name", itr->point);
 	}
+
 	std::unique_ptr<ast_node_function> func = std::make_unique<ast_node_function>();
 	func->block = std::move(block);
-	func->return_type = return_type;
-	func->function_name = func_name;
+	func->return_type = return_type_token.type;
+	func->function_name = func_name_token.raw;
 	func->point = point;
 	func->arguments = std::move(args);
 	con.pre_evaluate.push_back(func.get());
