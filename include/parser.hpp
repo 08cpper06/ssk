@@ -250,7 +250,7 @@ public:
 		block(nullptr),
 		function_name(),
 		arguments({}),
-		return_type(lexer::token_type::eof)
+		return_type(context::var_type::_invalid)
 	{}
 	virtual ~ast_node_function() = default;
 
@@ -259,9 +259,15 @@ public:
 		std::string ret = indent + "<function name=" + function_name + ">\n";
 		ret += indent + "\t<return type=\"";
 		switch (return_type) {
-		case lexer::token_type::_int: ret += "int"; break;
-		case lexer::token_type::_float: ret += "float"; break;
-		case lexer::token_type::_bool: ret += "bool"; break;
+		case context::var_type::_invalid: ret += "invalid"; break;
+		case context::var_type::_int: ret += "int"; break;
+		case context::var_type::_float: ret += "float"; break;
+		case context::var_type::_bool: ret += "bool"; break;
+		case context::var_type::_str: ret += "str"; break;
+		case context::var_type::_int_array: ret += "int[]"; break;
+		case context::var_type::_float_array: ret += "float[]"; break;
+		case context::var_type::_bool_array: ret += "bool[]"; break;
+		case context::var_type::_str_array: ret += "str[]"; break;
 		}
 		ret += "\"></return>\n";
 		for (const context::var_info& arg : arguments) {
@@ -293,7 +299,7 @@ public:
 
 	std::vector<context::var_info> arguments;
 
-	lexer::token_type return_type;
+	context::var_type return_type;
 	int return_type_size;
 };
 

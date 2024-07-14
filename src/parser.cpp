@@ -22,6 +22,9 @@ std::unique_ptr<ast_node_base> parser::try_build_value(context& con, std::vector
 	if (itr->type == lexer::token_type::string) {
 		return std::make_unique<ast_node_string>(*itr++, itr->point);
 	}
+	if (itr->raw == "{") {
+		return try_build_initial_list(con, itr);
+	}
 	if (itr->type != lexer::token_type::number &&
 		itr->type != lexer::token_type::_true &&
 		itr->type != lexer::token_type::_false &&
@@ -599,10 +602,6 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 	}
 	++itr;
 	lexer::token return_type_token = *itr++;
-	std::unique_ptr<ast_node_base> block = try_build_block(con, itr);
-	if (ast_node_block* casted_block = dynamic_cast<ast_node_block*>(block.get())) {
-		casted_block->block_name = func_name_token.raw;
-	}
 
 	int return_type_size = -1;
 	if (itr->raw == "[") {
@@ -615,11 +614,13 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 		}
 	}
 
-	switch (return_type_token.type) {
-	case lexer::token_type::_int: break;
-	case lexer::token_type::_float: break;
-	case lexer::token_type::_bool: break;
-	default:
+	std::unique_ptr<ast_node_base> block = try_build_block(con, itr);
+	if (ast_node_block* casted_block = dynamic_cast<ast_node_block*>(block.get())) {
+		casted_block->block_name = func_name_token.raw;
+	}
+
+	context::var_type return_type = context::cast_from_token(return_type_token.type, return_type_size >= 0);
+	if (return_type == context::var_type::_invalid) {
 		std::cout << "invalid type (" << itr->raw << ")" << std::endl;
 		return std::make_unique<ast_node_error>("expeceted type (" + itr->raw + ")", point);
 	}
@@ -630,7 +631,7 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 
 	std::unique_ptr<ast_node_function> func = std::make_unique<ast_node_function>();
 	func->block = std::move(block);
-	func->return_type = return_type_token.type;
+	func->return_type = return_type;
 	func->return_type_size = return_type_size;
 	func->function_name = func_name_token.raw;
 	func->point = point;

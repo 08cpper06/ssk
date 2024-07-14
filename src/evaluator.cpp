@@ -129,6 +129,18 @@ std::optional<invalid_state> ast_node_call_function::evaluate(context& con) {
 	} else if (itr->second.type == context::var_type::_str && con.stack.back().index() != string_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected str value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
 		con.abort();
+	} else if (itr->second.type == context::var_type::_bool_array && con.stack.back().index() != bool_array_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected bool[] value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
+		con.abort();
+	} else if (itr->second.type == context::var_type::_int_array && con.stack.back().index() != int_array_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected int[] value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
+		con.abort();
+	} else if (itr->second.type == context::var_type::_float_array && con.stack.back().index() != float_array_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected float[] value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
+		con.abort();
+	} else if (itr->second.type == context::var_type::_str_array && con.stack.back().index() != string_array_index) {
+		std::cout << "runtime error (" << point.line << ", " << point.col << "): expected str[] value as return value (type: `" << std::visit(get_object_type_name {}, con.stack.back()) << "`)" << std::endl;
+		con.abort();
 	}
 
 	for (const context::func_info::arg_info& info : itr->second.arguments) {
@@ -291,7 +303,7 @@ std::optional<invalid_state> ast_node_function::evaluate(context& con) {
 	for (const context::var_info& arg : arguments) {
 		info.arguments.push_back(context::func_info::arg_info { .name = arg.name, .modifier = arg.modifier, .type = arg.type });
 	}
-	info.type = context::cast_from_token(return_type, return_type_size >= 0);
+	info.type = return_type;
 	info.block = block.get();
 	con.func_table.insert({ function_name, std::move(info) });
 	con.return_code = std::nullopt;
