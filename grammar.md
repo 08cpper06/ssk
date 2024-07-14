@@ -145,10 +145,14 @@
 
 <b>*multiplicative-expression*</b>:<br>
 &emsp;<b>*value*</b><br>
-&emsp;<b>*multiplicative-expression*</b> * <b>*value*</b><br>
-&emsp;<b>*multiplicative-expression*</b> / <b>*value*</b><br>
+&emsp;<b>*multiplicative-expression*</b> * <b>*repeat-expression*</b><br>
+&emsp;<b>*multiplicative-expression*</b> / <b>*repeat-expression*</b><br>
 
-<b>*literal*</b>:<br>
+<b>*repeat-expression*</b>:<br>
+&emsp;<b>*value*</b><br>
+&emsp;<b>*value*</b> ... <b>*value*</b><br>
+
+<b>*value*</b>:<br>
 &emsp;<b>*number*</b><br>
 &emsp;<b>*number*</b> . <b>*number*</b><br>
 &emsp;. <b>*number*</b><br>
