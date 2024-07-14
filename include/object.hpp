@@ -194,7 +194,22 @@ struct get_object_return_code {
 	std::optional<invalid_state> operator()(bool value) noexcept {
 		return std::nullopt;
 	}
-	std::optional<invalid_state> operator()(const auto&) noexcept {
+	std::optional<invalid_state> operator()(const std::string& value) noexcept {
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(const std::vector<int>& value) noexcept {
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(const std::vector<float>& value) noexcept {
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(std::vector<bool>& value) noexcept {
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(const std::vector<std::string>& value) noexcept {
+		return std::nullopt;
+	}
+	std::optional<invalid_state> operator()(auto) noexcept {
 		return invalid_state("invalid return state");
 	}
 };
@@ -219,7 +234,7 @@ struct get_object_as_string {
 		std::string str = "[";
 		char sep = '\0';
 		for (const bool& value : values) {
-			str += std::exchange(sep, ',') + value;
+			str += std::exchange(sep, ',') + (value ? "true" : "false");
 		}
 		return str + "]";
 	}
@@ -227,7 +242,7 @@ struct get_object_as_string {
 		std::string str = "[";
 		char sep = '\0';
 		for (const int& value : values) {
-			str += std::exchange(sep, ',') + value;
+			str += std::exchange(sep, ',') + std::to_string(value);
 		}
 		return str + "]";
 	}
@@ -235,7 +250,7 @@ struct get_object_as_string {
 		std::string str = "[";
 		char sep = '\0';
 		for (const float& value : values) {
-			str += std::exchange(sep, ',') + value;
+			str += std::exchange(sep, ',') + std::to_string(value);
 		}
 		return str + "]";
 	}
@@ -385,6 +400,11 @@ struct operate_add_object {
 		return lhs + rhs;
 	}
 	OBJECT operator()(const std::vector<int>& lhs, const std::vector<int>& rhs) {
+		if (lhs_index < 0 && rhs_index < 0) {
+			std::vector<int> ret = lhs;
+			ret.insert(ret.end(), rhs.begin(), rhs.end());
+			return ret;
+		}
 		if (lhs_index < 0) {
 			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
@@ -400,6 +420,14 @@ struct operate_add_object {
 		return lhs[lhs_index] + rhs[rhs_index];
 	}
 	OBJECT operator()(const std::vector<int>& lhs, const std::vector<float>& rhs) {
+		if (lhs_index < 0 && rhs_index < 0) {
+			std::vector<int> ret = lhs;
+			ret.reserve(ret.size() + rhs.size());
+			for (const float& item : rhs) {
+				ret.push_back(static_cast<int>(item));
+			}
+			return ret;
+		}
 		if (lhs_index < 0) {
 			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
@@ -415,6 +443,15 @@ struct operate_add_object {
 		return lhs[lhs_index] + static_cast<int>(rhs[rhs_index]);
 	}
 	OBJECT operator()(const std::vector<float>& lhs, const std::vector<int>& rhs) {
+		if (lhs_index < 0 && rhs_index < 0) {
+			std::vector<int> ret;
+			ret.reserve(lhs.size() + rhs.size());
+			for (const float& item : lhs) {
+				ret.push_back(static_cast<int>(item));
+			}
+			ret.insert(ret.begin(), rhs.begin(), rhs.end());
+			return ret;
+		}
 		if (lhs_index < 0) {
 			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
@@ -430,6 +467,11 @@ struct operate_add_object {
 		return static_cast<int>(lhs[lhs_index]) + rhs[rhs_index];
 	}
 	OBJECT operator()(const std::vector<float>& lhs, const std::vector<float>& rhs) {
+		if (lhs_index < 0 && rhs_index < 0) {
+			std::vector<float> ret = lhs;
+			ret.insert(ret.end(), rhs.begin(), rhs.end());
+			return ret;
+		}
 		if (lhs_index < 0) {
 			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}
@@ -446,6 +488,11 @@ struct operate_add_object {
 	}
 
 	OBJECT operator()(const std::vector<std::string>& lhs, const std::vector<std::string>& rhs) {
+		if (lhs_index < 0 && rhs_index < 0) {
+			std::vector<std::string> ret = lhs;
+			ret.insert(ret.end(), rhs.begin(), rhs.end());
+			return ret;
+		}
 		if (lhs_index < 0) {
 			return invalid_state("out of range (access: " + std::to_string(lhs_index) + ")");
 		}

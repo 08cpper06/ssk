@@ -277,7 +277,7 @@ std::optional<invalid_state> ast_node_bin::evaluate(context& con) {
 		result = std::visit(operate_greater_than_or_equal_object(-1, -1), lhs_value, rhs_value);
 	}
 
-	if (!result.index()) {
+	if (result.index() == state_index) {
 		std::cout << "runtime error (" << point.line << ", " << point.col << "): " << std::get<invalid_state>(result).message << std::endl;
 		con.abort();
 	}
