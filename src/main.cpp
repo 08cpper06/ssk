@@ -36,7 +36,12 @@ int main(int argc, const char* argv[]) {
 
 	std::cout << "==============" << std::endl;
 	runtime::evaluate_pre_process(con);
-	con.func_table["main"].block->evaluate(con);
+	if (con.func_table.find("main") != con.func_table.end()) {
+		con.func_table["main"].block->evaluate(con);
+	} else {
+		std::cout << "not found main()" << std::endl;
+		return 2;
+	}
 	if (con.stack.size()) {
 		OBJECT return_code = con.stack.back();
 		std::cout << "return code: " << std::visit(get_object_as_string {}, return_code) << std::endl;

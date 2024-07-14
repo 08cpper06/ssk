@@ -346,6 +346,9 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	}
 
 	itr = tmp;
+	if (var_name_token.type != lexer::token_type::identifier) {
+		return std::make_unique<ast_node_error>("expected identifier", point);
+	}
 	return std::make_unique<ast_node_var_definition>(modifier, var_name_token.raw, type, size, std::move(init_value), point);
 }
 
