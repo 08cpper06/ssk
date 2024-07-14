@@ -1,47 +1,6 @@
-// line comment
-/* block comment */
-/* /* nested block comment */ */
 
-fn test(const value: int) -> bool {
-	return value == 0;
-}
 
 fn main() -> int {
-	mut fugo : int = 0;
-	const hoge : int = 1000;
-	const test : bool = false;
-	mut arr: int[3] = { 100, 200, 300 };
-	mut arr2: int[3] = { 100, 200 };
-	mut tmp: str = "Hello World";
-	mut tmp2: str[] = { "Hello World", "Test" };
-	tmp = tmp + "!!";
-	return tmp;
-	arr[2] = 10;
-	/*
-	if (test) {
-		fugo = 100;
-	} else {
-		fugo = 200;
-	}
-
-	mut idx : int = 0;
-	while (idx < 10) {
-		idx = idx + 1;
-	}
-	do {
-		idx = idx + 1;
-	} while (idx < 10);
-	*/
-	return max(arr[2], 0);
-	// return idx / 0;
-}
-
-fn max(const lhs: int, const rhs: int) -> int {
-	if (test(lhs)) {
-		return rhs;
-	}
-	if (lhs > rhs) {
-		return lhs;
-	}
-	return rhs;
+	mut str: str[2] = { "Hello World", "Test" };
+	return str;
 }

@@ -226,6 +226,12 @@ std::unique_ptr<ast_node_base> parser::try_build_return(context& con, std::vecto
 	}
 	++itr;
 	std::unique_ptr<ast_node_base> node = try_build_expr(con, itr);
+	if (!node) {
+		skip_until_semicolon(itr);
+		if (itr->type != lexer::token_type::eof) {
+			++itr;
+		}
+	}
 	return std::make_unique<ast_node_return>(std::move(node), itr->point);
 }
 

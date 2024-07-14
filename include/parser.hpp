@@ -193,9 +193,10 @@ public:
 		std::string ret = indent + "<return>\n";
 		if (value) {
 			ret += value->log(indent + '\t');
-			return ret + indent + "</return>\n";
+		} else {
+			ret += indent + "\t<error>no expression</error>\n";
 		}
-		return indent + "<expr>error</expr>\n";
+		return ret + indent + "</return>\n";
 	}
 	virtual std::optional<invalid_state> evaluate(context& con);
 	std::unique_ptr<ast_node_base> value;
