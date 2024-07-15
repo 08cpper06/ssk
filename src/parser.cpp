@@ -705,6 +705,163 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 	return std::move(func);
 }
 
+std::unique_ptr<ast_node_base> parser::try_class_member_function(context& con, std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::func) {
+		return nullptr;
+	}
+	++itr;
+	lexer::token func_name_token = *itr;
+	code_point point = itr->point;
+	++itr;
+	if (itr->raw != "(") {
+		return std::make_unique<ast_node_error>("expeceted function name", itr->point);
+	}
+	++itr;
+	std::vector<context::var_info> args;
+	context::var_info var;
+	if (itr->raw != ")") {
+		while (itr->type == lexer::token_type::_const || itr->type == lexer::token_type::_mut) {
+			switch (itr->type) {
+			case lexer::token_type::_const: break;
+			case lexer::token_type::_mut: break;
+			default:
+				std::cout << "invalid modifier (" << itr->raw << ")" << std::endl;
+				return std::make_unique<ast_node_error>("invalid modifier: " + itr->raw, itr->point);
+			}
+			var.modifier = itr->type;
+			++itr;
+
+			if (itr->type != lexer::token_type::identifier) {
+				std::cout << "expected identifier" << std::endl;
+				return std::make_unique<ast_node_error>("expected identifier", itr->point);
+			}
+			var.name = itr->raw;
+			++itr;
+
+			if (itr->raw != ":") {
+				std::cout << "expected `:`" << std::endl;
+				return std::make_unique<ast_node_error>("expected identifier", itr->point);
+			}
+			++itr;
+
+			switch (itr->type) {
+			case lexer::token_type::_int:
+				++itr;
+				var.type = context::var_type::_int;
+				if (itr->raw == "[") {
+					var.type = context::var_type::_int_array;
+					++itr;
+					if (itr->raw != "]") {
+						var.type = context::var_type::_invalid;
+					}
+					else {
+						++itr;
+					}
+				}
+				break;
+			case lexer::token_type::_float:
+				++itr;
+				var.type = context::var_type::_float;
+				if (itr->raw == "[") {
+					var.type = context::var_type::_float_array;
+					++itr;
+					if (itr->raw != "]") {
+						var.type = context::var_type::_invalid;
+					}
+					else {
+						++itr;
+					}
+				}
+				break;
+			case lexer::token_type::_bool:
+				++itr;
+				var.type = context::var_type::_bool;
+				if (itr->raw == "[") {
+					var.type = context::var_type::_bool_array;
+					++itr;
+					if (itr->raw != "]") {
+						var.type = context::var_type::_invalid;
+					}
+					else {
+						++itr;
+					}
+				}
+				break;
+			case lexer::token_type::_str:
+				++itr;
+				var.type = context::var_type::_str;
+				if (itr->raw == "[") {
+					var.type = context::var_type::_str_array;
+					++itr;
+					if (itr->raw != "]") {
+						var.type = context::var_type::_invalid;
+					}
+					else {
+						++itr;
+					}
+				}
+				break;
+			default:
+				std::cout << "invalid type (" << itr->raw << ")" << std::endl;
+				return std::make_unique<ast_node_error>("invalid type (" + itr->raw + ")", point);
+			}
+
+			args.push_back(var);
+
+			if (itr->raw == ")") {
+				break;
+			}
+			if (itr->type != lexer::token_type::comma) {
+				return std::make_unique<ast_node_error>("expected `)` or `,`", point);
+			}
+			++itr;
+		}
+	}
+	++itr;
+	if (itr->type != lexer::token_type::arrow) {
+		return std::make_unique<ast_node_error>("expeceted `->`", point);
+	}
+	++itr;
+	lexer::token return_type_token = *itr++;
+
+	int return_type_size = -1;
+	if (itr->raw == "[") {
+		++itr;
+		if (itr->raw == "]") {
+			return_type_size = 0;
+			++itr;
+		}
+		else {
+			return std::make_unique<ast_node_error>("return type dimension is empty", itr->point);
+		}
+	}
+
+	std::unique_ptr<ast_node_base> block = try_build_block(con, itr);
+	if (ast_node_block* casted_block = dynamic_cast<ast_node_block*>(block.get())) {
+		casted_block->block_name = func_name_token.raw;
+	}
+
+	context::var_type return_type = context::cast_from_token(return_type_token.type, return_type_size >= 0);
+	if (return_type == context::var_type::_invalid) {
+		std::cout << "invalid type (" << itr->raw << ")" << std::endl;
+		return std::make_unique<ast_node_error>("expeceted type (" + itr->raw + ")", point);
+	}
+
+	if (func_name_token.type != lexer::token_type::identifier) {
+		return std::make_unique<ast_node_error>("expeceted function name", itr->point);
+	}
+
+	std::unique_ptr<ast_node_function> func = std::make_unique<ast_node_function>();
+	func->block = std::move(block);
+	func->return_type = return_type;
+	func->return_type_size = return_type_size;
+	func->function_name = func_name_token.raw;
+	func->point = point;
+	func->arguments = std::move(args);
+	// con.pre_evaluate.push_back(func.get());
+	return std::move(func);
+}
+
 std::unique_ptr<ast_node_base> parser::try_class_block(context& con, std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->raw != "{") {
 		return nullptr;
@@ -727,7 +884,7 @@ std::unique_ptr<ast_node_base> parser::try_class_block(context& con, std::vector
 			}
 			continue;
 		}
-		node = try_build_function(con, itr);
+		node = try_class_member_function(con, itr);
 		if (node) {
 			nodes.push_back(std::move(node));
 			continue;

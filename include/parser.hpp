@@ -622,6 +622,7 @@ private:
 	static void skip_until_semicolon(std::vector<lexer::token>::const_iterator& itr);
 public:
 	static std::unique_ptr<ast_node_base> try_class_block(context& con, std::vector<lexer::token>::const_iterator& itr);
+	static std::unique_ptr<ast_node_base> try_class_member_function(context& con, std::vector<lexer::token>::const_iterator& itr);
 
 	static std::unique_ptr<ast_node_base> try_build_class(context& con, std::vector<lexer::token>::const_iterator& itr);
 public:
