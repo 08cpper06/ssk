@@ -39,6 +39,7 @@ public:
 		_else,
 		_while,
 		_do,
+		_class,
 
 		_int,
 		_float,

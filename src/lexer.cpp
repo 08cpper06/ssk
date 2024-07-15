@@ -63,6 +63,7 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 		{ .str = "fn", .type = lexer::token_type::func, .is_keyword = true },
 		{ .str = "while", .type = lexer::token_type::_while, .is_keyword = true },
 		{ .str = "do", .type = lexer::token_type::_do, .is_keyword = true },
+		{ .str = "class", .type = lexer::token_type::_class, .is_keyword = true },
 	};
 	if (*con.itr == '\n') {
 		++con.itr;
@@ -89,13 +90,16 @@ std::optional<lexer::token> lexer::try_parse_sign_and_keyword(lexer::context& co
 			max_len = len;
 		}
 	}
+	std::string::const_iterator tmp = con.itr;
 	con.itr += max_len;
 	code_point point = con.point;
 	con.point.col += max_len;
 	if (index == -1) {
 		return std::nullopt;
 	}
-	if (keywords[index].type != lexer::token_type::sign && (keywords[index].is_keyword && (std::isalnum(*con.itr)  || *con.itr == '_'))) {
+	if (keywords[index].is_keyword && (isalnum(*con.itr) || *con.itr == '_')) {
+		con.itr = tmp;
+		con.point.col -= max_len;
 		return std::nullopt;
 	}
 	return token { .raw = keywords[index].str, .type = keywords[index].type, .point = point };

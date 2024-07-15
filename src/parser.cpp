@@ -315,13 +315,13 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 
 	if (tmp->type == lexer::token_type::semicolon) {
 		itr = ++tmp;
-		if (type != lexer::token_type::unknown) {
+		if (type == lexer::token_type::unknown) {
 			return std::make_unique<ast_node_error>("invalid type : " + tmp->raw, point);
 		}
 		if (var_name_token.type != lexer::token_type::identifier) {
 			return std::make_unique<ast_node_error>("expected identifier", point);
 		}
-		if (!is_integer_dim) {
+		if (size >= 0 && !is_integer_dim) {
 			return std::make_unique<ast_node_error>("dimension should be integer", point);
 		}
 
@@ -705,6 +705,63 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 	return std::move(func);
 }
 
+std::unique_ptr<ast_node_base> parser::try_class_block(context& con, std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->raw != "{") {
+		return nullptr;
+	}
+	code_point point = itr->point;
+	++itr;
+	std::unique_ptr<ast_node_base> node;
+	std::vector<std::unique_ptr<ast_node_base>> nodes;
+	while (itr->raw != "}") {
+		if (itr->type == lexer::token_type::eof) {
+			return std::make_unique<ast_node_error>("expected `}`", itr->point);
+		}
+		node = try_build_var_definition(con, itr);
+		if (node && is_a<ast_node_var_definition>(node.get())) {
+			ast_node_var_definition* ptr = static_cast<ast_node_var_definition*>(node.get());
+			if (ptr->init_value) {
+				nodes.push_back(std::make_unique<ast_node_error>("member variable cannot have initialize value", ptr->point));
+			} else {
+				nodes.push_back(std::move(node));
+			}
+			continue;
+		}
+		node = try_build_function(con, itr);
+		if (node) {
+			nodes.push_back(std::move(node));
+			continue;
+		}
+		++itr;
+	}
+	if (itr->type != lexer::token_type::eof) {
+		++itr;
+	}
+	return std::make_unique<ast_node_block>(std::move(nodes), point);
+}
+
+std::unique_ptr<ast_node_base> parser::try_build_class(context& con, std::vector<lexer::token>::const_iterator& itr) {
+	if (itr->type != lexer::token_type::_class) {
+		return nullptr;
+	}
+	++itr;
+	code_point point = itr->point;
+	lexer::token name = *itr++;
+
+	std::unique_ptr<ast_node_base> block = try_class_block(con, itr);
+	if (!block) {
+		return std::make_unique<ast_node_error>("expected `{`", point);
+	}
+	if (is_a<ast_node_block>(block.get())) {
+		ast_node_block* ptr = static_cast<ast_node_block*>(block.get());
+		ptr->block_name = "class@" + name.raw;
+	}
+	if (itr->type != lexer::token_type::semicolon) {
+		return std::make_unique<ast_node_error>("expected `;`", itr->point);
+	}
+	return std::make_unique<ast_node_class>(name, std::move(block), point);
+}
+
 bool parser::try_skip_comment(std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->type == lexer::token_type::comment_begin) {
 		int nest_count = 1;
@@ -756,6 +813,8 @@ std::unique_ptr<ast_node_base> parser::try_build_program(context& con, std::vect
 		} else if (node = try_build_var_definition(con, itr)) {
 			exprs.push_back(std::move(node));
 		} else if (node = try_build_block(con, itr)) {
+			exprs.push_back(std::move(node));
+		} else if (node = try_build_class(con, itr)) {
 			exprs.push_back(std::move(node));
 		} else if (isspace(itr->raw[0]) || itr->raw == ";") {
 			++itr;

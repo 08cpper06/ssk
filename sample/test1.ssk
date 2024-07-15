@@ -1,4 +1,10 @@
+class Hoge {
+	const var1: int;
+	fn constructor() -> int {
+		return 0;
+	}
+};
+
 fn main() -> str[] {
-	const test: str[] = "a"..."z" + "A"..."Z" + "_"..."_" + "0"..."9";
-	return test;
+	return { "" };
 }

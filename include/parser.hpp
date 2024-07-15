@@ -560,6 +560,33 @@ public:
 	std::vector<std::unique_ptr<ast_node_base>> values;
 };
 
+class ast_node_class : public ast_node_base {
+public:
+	struct ast_class_tag : public ast_base_tag {};
+	inline static constexpr ast_class_tag tag;
+public:
+	ast_node_class(const lexer::token& name, std::unique_ptr<ast_node_base>&& block, code_point point) :
+		name(name),
+		block(std::move(block))
+	{
+		this->point = point;
+	}
+	~ast_node_class() = default;
+
+	virtual const ast_base_tag* get_tag() const { return &ast_node_class::tag; }
+	virtual std::string log(std::string indent) {
+		std::string ret = indent + "<class name=\"" + name.raw + "\">\n";
+		if (block) {
+			ret += block->log(indent + "\t");
+		}
+		return ret + indent + "</class>\n";
+	}
+	virtual std::optional<invalid_state> evaluate(context& con);
+
+	lexer::token name;
+	std::unique_ptr<ast_node_base> block;
+};
+
 class ast_node_program : public ast_node_base {
 public:
 	struct ast_expr_tag : public ast_base_tag {};
@@ -593,6 +620,10 @@ public:
 class parser {
 private:
 	static void skip_until_semicolon(std::vector<lexer::token>::const_iterator& itr);
+public:
+	static std::unique_ptr<ast_node_base> try_class_block(context& con, std::vector<lexer::token>::const_iterator& itr);
+
+	static std::unique_ptr<ast_node_base> try_build_class(context& con, std::vector<lexer::token>::const_iterator& itr);
 public:
 	static std::unique_ptr<ast_node_base> try_build_value(context& con, std::vector<lexer::token>::const_iterator& itr);
 	static std::unique_ptr<ast_node_base> try_build_repeat(context& con, std::vector<lexer::token>::const_iterator& itr);

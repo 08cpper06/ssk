@@ -541,6 +541,10 @@ std::optional<invalid_state> ast_node_initial_list::evaluate(context& con) {
 	return con.return_code;
 }
 
+std::optional<invalid_state> ast_node_class::evaluate(context& con) {
+	return std::nullopt;
+}
+
 std::optional<invalid_state> ast_node_program::evaluate(context& con) {
 	for (const std::unique_ptr<ast_node_base>& item : exprs) {
 		con.return_code = item->evaluate(con);
