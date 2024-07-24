@@ -284,6 +284,7 @@ std::unique_ptr<ast_node_base> parser::try_build_var_definition(context& con, st
 	case lexer::token_type::_float: break;
 	case lexer::token_type::_bool: break;
 	case lexer::token_type::_str: break;
+	case lexer::token_type::identifier: break;
 	default:
 		type = lexer::token_type::unknown;
 		point = itr->point;
@@ -705,7 +706,7 @@ std::unique_ptr<ast_node_base> parser::try_build_function(context& con, std::vec
 	return std::move(func);
 }
 
-std::unique_ptr<ast_node_base> parser::try_class_member_function(context& con, std::vector<lexer::token>::const_iterator& itr) {
+std::unique_ptr<ast_node_base> parser::try_class_member_function(context& con, const std::string& name, std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->type != lexer::token_type::func) {
 		return nullptr;
 	}
@@ -855,14 +856,14 @@ std::unique_ptr<ast_node_base> parser::try_class_member_function(context& con, s
 	func->block = std::move(block);
 	func->return_type = return_type;
 	func->return_type_size = return_type_size;
-	func->function_name = func_name_token.raw;
+	func->function_name = "class@" + name + "." + func_name_token.raw;
 	func->point = point;
 	func->arguments = std::move(args);
-	// con.pre_evaluate.push_back(func.get());
+	con.pre_evaluate.push_back(func.get());
 	return std::move(func);
 }
 
-std::unique_ptr<ast_node_base> parser::try_class_block(context& con, std::vector<lexer::token>::const_iterator& itr) {
+std::unique_ptr<ast_node_base> parser::try_class_block(context& con, const std::string& name, std::vector<lexer::token>::const_iterator& itr) {
 	if (itr->raw != "{") {
 		return nullptr;
 	}
@@ -884,7 +885,7 @@ std::unique_ptr<ast_node_base> parser::try_class_block(context& con, std::vector
 			}
 			continue;
 		}
-		node = try_class_member_function(con, itr);
+		node = try_class_member_function(con, name, itr);
 		if (node) {
 			nodes.push_back(std::move(node));
 			continue;
@@ -905,7 +906,7 @@ std::unique_ptr<ast_node_base> parser::try_build_class(context& con, std::vector
 	code_point point = itr->point;
 	lexer::token name = *itr++;
 
-	std::unique_ptr<ast_node_base> block = try_class_block(con, itr);
+	std::unique_ptr<ast_node_base> block = try_class_block(con, name.raw, itr);
 	if (!block) {
 		return std::make_unique<ast_node_error>("expected `{`", point);
 	}
